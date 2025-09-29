@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sr:studentRegistration xmlns:sr="http://university.edu/student-registration"
+                       registrationId="REG-1759174423160"
+                       submissionDate="2025-09-29"
+                       status="pending">
+  
+  <sr:personalInfo>
+    <sr:firstName>John</sr:firstName>
+    <sr:lastName>Smith</sr:lastName>
+    <sr:middleName>Michael</sr:middleName>
+    <sr:dateOfBirth>2002-05-15</sr:dateOfBirth>
+    <sr:gender>Male</sr:gender>
+    <sr:nationality>American</sr:nationality>
+    <sr:socialSecurityNumber>123-45-6789</sr:socialSecurityNumber>
+    <sr:maritalStatus>Single</sr:maritalStatus>
+  </sr:personalInfo>
+
+  <sr:academicInfo>
+    <sr:program>Bachelor</sr:program>
+    <sr:major>Computer Science</sr:major>
+    <sr:minor>Mathematics</sr:minor>
+    <sr:expectedGraduationYear>2026</sr:expectedGraduationYear>
+    <sr:previousEducation level="High School">
+      <sr:institutionName>Previous School</sr:institutionName>
+      <sr:degree>High School Diploma</sr:degree>
+      <sr:graduationYear>2024</sr:graduationYear>
+    </sr:previousEducation>
+    <sr:gpa>3.75</sr:gpa>
+    <sr:isTransferStudent>false</sr:isTransferStudent>
+  </sr:academicInfo>
+
+  <sr:contactInfo>
+    <sr:address>
+      <sr:street>123 Main Street</sr:street>
+      <sr:city>Springfield</sr:city>
+      <sr:state>Illinois</sr:state>
+      <sr:zipCode>62701</sr:zipCode>
+      <sr:country>United States</sr:country>
+    </sr:address>
+    <sr:phoneNumber>+12175551234</sr:phoneNumber>
+    <sr:email>john.smith@email.com</sr:email>
+    <sr:alternateEmail>j.smith.alt@gmail.com</sr:alternateEmail>
+  </sr:contactInfo>
+
+  <sr:emergencyContacts>
+    <sr:contact priority="Primary">
+      <sr:name>Mary Smith</sr:name>
+      <sr:relationship>Parent</sr:relationship>
+      <sr:phoneNumber>+12175555678</sr:phoneNumber>
+      <sr:email>mary.smith@email.com</sr:email>
+    </sr:contact>
+  </sr:emergencyContacts>
+
+  <sr:courses totalCredits="3">
+    <sr:course semester="Fall">
+      <sr:courseCode>CS101</sr:courseCode>
+      <sr:courseName>Introduction to Computer Science</sr:courseName>
+      <sr:credits>3</sr:credits>
+      <sr:instructor>Dr. Johnson</sr:instructor>
+      <sr:schedule>
+        <sr:days>MWF</sr:days>
+        <sr:startTime>09:00</sr:startTime>
+        <sr:endTime>10:00</sr:endTime>
+        <sr:room>CS-101</sr:room>
+      </sr:schedule>
+    </sr:course>
+  </sr:courses>
+
+  <sr:additionalInfo>
+    <sr:extracurricularActivities>Chess Club, Programming Club</sr:extracurricularActivities>
+    <sr:workExperience>Part-time tutor for high school students</sr:workExperience>
+    <sr:financialAidRequired>true</sr:financialAidRequired>
+    <sr:housingRequired>true</sr:housingRequired>
+  </sr:additionalInfo>
+
+</sr:studentRegistration>

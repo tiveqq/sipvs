@@ -22,27 +22,293 @@ const ensureDirectories = async () => {
 // XML Validation function
 const validateXMLAgainstXSD = async (xmlContent, xsdPath) => {
   try {
-    // Simple string-based validation to avoid XML parsing issues
+    const { XMLParser } = require('fast-xml-parser');
     const errors = [];
 
-    // Check if XML contains the required root element
-    if (!xmlContent.includes('<sr:studentRegistration')) {
-      errors.push('Root element sr:studentRegistration not found');
+    // Parse XML
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: '@_',
+      textNodeName: '#text',
+      ignoreNameSpace: false,
+      removeNSPrefix: true
+    });
+
+    let parsedXML;
+    try {
+      parsedXML = parser.parse(xmlContent);
+    } catch (parseError) {
+      return {
+        valid: false,
+        errors: [`XML parsing error: ${parseError.message}`]
+      };
     }
 
-    // Check for required attributes
-    if (!xmlContent.includes('registrationId=')) {
+    const data = parsedXML.studentRegistration;
+    if (!data) {
+      return {
+        valid: false,
+        errors: ['Root element studentRegistration not found']
+      };
+    }
+
+    // Validate root attributes
+    if (!data['@_registrationId']) {
       errors.push('Missing required attribute: registrationId');
     }
-    if (!xmlContent.includes('submissionDate=')) {
+    if (!data['@_submissionDate']) {
       errors.push('Missing required attribute: submissionDate');
+    } else if (!isValidDate(data['@_submissionDate'])) {
+      errors.push('Invalid submissionDate format (expected: YYYY-MM-DD)');
+    }
+    if (data['@_status'] && !['pending', 'approved', 'rejected', 'incomplete'].includes(data['@_status'])) {
+      errors.push(`Invalid status value: ${data['@_status']} (must be: pending, approved, rejected, or incomplete)`);
     }
 
-    // Check for required child elements
-    const requiredElements = ['sr:personalInfo', 'sr:academicInfo', 'sr:contactInfo', 'sr:emergencyContacts', 'sr:courses'];
-    for (const element of requiredElements) {
-      if (!xmlContent.includes(`<${element}`)) {
-        errors.push(`Missing required element: ${element}`);
+    // Validate Personal Info
+    if (!data.personalInfo) {
+      errors.push('Missing required element: personalInfo');
+    } else {
+      const pi = data.personalInfo;
+
+      // Name validation
+      if (!pi.firstName || pi.firstName.trim() === '') {
+        errors.push('firstName is required and cannot be empty');
+      } else if (!isValidName(pi.firstName)) {
+        errors.push(`Invalid firstName format: ${pi.firstName}`);
+      }
+
+      if (!pi.lastName || pi.lastName.trim() === '') {
+        errors.push('lastName is required and cannot be empty');
+      } else if (!isValidName(pi.lastName)) {
+        errors.push(`Invalid lastName format: ${pi.lastName}`);
+      }
+
+      if (pi.middleName && !isValidName(pi.middleName)) {
+        errors.push(`Invalid middleName format: ${pi.middleName}`);
+      }
+
+      // Date of birth validation
+      if (!pi.dateOfBirth) {
+        errors.push('dateOfBirth is required');
+      } else if (!isValidDate(pi.dateOfBirth)) {
+        errors.push(`Invalid dateOfBirth format: ${pi.dateOfBirth} (expected: YYYY-MM-DD)`);
+      }
+
+      // Gender validation
+      if (!pi.gender) {
+        errors.push('gender is required');
+      } else if (!['Male', 'Female', 'Other', 'Prefer not to say'].includes(pi.gender)) {
+        errors.push(`Invalid gender value: ${pi.gender} (must be: Male, Female, Other, or Prefer not to say)`);
+      }
+
+      // SSN validation
+      if (pi.socialSecurityNumber && !isValidSSN(pi.socialSecurityNumber)) {
+        errors.push(`Invalid socialSecurityNumber format: ${pi.socialSecurityNumber} (expected: XXX-XX-XXXX)`);
+      }
+
+      // Marital status validation
+      if (!pi.maritalStatus) {
+        errors.push('maritalStatus is required');
+      } else if (!['Single', 'Married', 'Divorced', 'Widowed'].includes(pi.maritalStatus)) {
+        errors.push(`Invalid maritalStatus value: ${pi.maritalStatus} (must be: Single, Married, Divorced, or Widowed)`);
+      }
+    }
+
+    // Validate Academic Info
+    if (!data.academicInfo) {
+      errors.push('Missing required element: academicInfo');
+    } else {
+      const ai = data.academicInfo;
+
+      // Program validation
+      if (!ai.program) {
+        errors.push('program is required');
+      } else if (!['Bachelor', 'Master', 'PhD', 'Certificate'].includes(ai.program)) {
+        errors.push(`Invalid program value: ${ai.program} (must be: Bachelor, Master, PhD, or Certificate)`);
+      }
+
+      // Expected graduation year validation
+      if (!ai.expectedGraduationYear) {
+        errors.push('expectedGraduationYear is required');
+      } else {
+        const year = parseInt(ai.expectedGraduationYear);
+        if (isNaN(year) || year < 1900 || year > 2030) {
+          errors.push(`Invalid expectedGraduationYear: ${ai.expectedGraduationYear} (must be between 1900 and 2030)`);
+        }
+      }
+
+      // GPA validation
+      if (ai.gpa !== undefined && ai.gpa !== null) {
+        const gpa = parseFloat(ai.gpa);
+        if (isNaN(gpa) || gpa < 0.0 || gpa > 4.0) {
+          errors.push(`Invalid GPA: ${ai.gpa} (must be between 0.0 and 4.0)`);
+        }
+      }
+
+      // Transfer student validation
+      if (ai.isTransferStudent === undefined || ai.isTransferStudent === null) {
+        errors.push('isTransferStudent is required');
+      } else if (typeof ai.isTransferStudent !== 'boolean' && !['true', 'false'].includes(String(ai.isTransferStudent).toLowerCase())) {
+        errors.push(`Invalid isTransferStudent value: ${ai.isTransferStudent} (must be boolean: true or false)`);
+      }
+
+      // Previous education validation
+      if (ai.previousEducation) {
+        const prevEdu = Array.isArray(ai.previousEducation) ? ai.previousEducation : [ai.previousEducation];
+        prevEdu.forEach((edu, index) => {
+          if (edu['@_level'] && !['High School', 'Undergraduate', 'Graduate'].includes(edu['@_level'])) {
+            errors.push(`Invalid previousEducation[${index}] level: ${edu['@_level']} (must be: High School, Undergraduate, or Graduate)`);
+          }
+          if (edu.gpa !== undefined && edu.gpa !== null) {
+            const gpa = parseFloat(edu.gpa);
+            if (isNaN(gpa) || gpa < 0.0 || gpa > 4.0) {
+              errors.push(`Invalid previousEducation[${index}] GPA: ${edu.gpa} (must be between 0.0 and 4.0)`);
+            }
+          }
+        });
+      }
+    }
+
+    // Validate Contact Info
+    if (!data.contactInfo) {
+      errors.push('Missing required element: contactInfo');
+    } else {
+      const ci = data.contactInfo;
+
+      // Email validation
+      if (!ci.email) {
+        errors.push('email is required');
+      } else if (!isValidEmail(ci.email)) {
+        errors.push(`Invalid email format: ${ci.email}`);
+      }
+
+      if (ci.alternateEmail && !isValidEmail(ci.alternateEmail)) {
+        errors.push(`Invalid alternateEmail format: ${ci.alternateEmail}`);
+      }
+
+      // Phone validation
+      if (!ci.phoneNumber) {
+        errors.push('phoneNumber is required');
+      } else if (!isValidPhone(ci.phoneNumber)) {
+        errors.push(`Invalid phoneNumber format: ${ci.phoneNumber} (expected: +1234567890 format)`);
+      }
+
+      if (ci.alternatePhone && !isValidPhone(ci.alternatePhone)) {
+        errors.push(`Invalid alternatePhone format: ${ci.alternatePhone}`);
+      }
+
+      // Address validation
+      if (!ci.address) {
+        errors.push('address is required');
+      } else {
+        if (ci.address.zipCode && !isValidZipCode(ci.address.zipCode)) {
+          errors.push(`Invalid zipCode format: ${ci.address.zipCode} (expected: 12345 or 12345-6789)`);
+        }
+      }
+    }
+
+    // Validate Emergency Contacts
+    if (!data.emergencyContacts) {
+      errors.push('Missing required element: emergencyContacts');
+    } else {
+      const contacts = Array.isArray(data.emergencyContacts.contact)
+        ? data.emergencyContacts.contact
+        : [data.emergencyContacts.contact];
+
+      if (contacts.length > 3) {
+        errors.push(`Too many emergency contacts: ${contacts.length} (maximum is 3)`);
+      }
+
+      contacts.forEach((contact, index) => {
+        if (!contact['@_priority']) {
+          errors.push(`emergencyContacts.contact[${index}] missing required attribute: priority`);
+        } else if (!['Primary', 'Secondary', 'Tertiary'].includes(contact['@_priority'])) {
+          errors.push(`Invalid emergencyContacts.contact[${index}] priority: ${contact['@_priority']} (must be: Primary, Secondary, or Tertiary)`);
+        }
+
+        if (!contact.relationship) {
+          errors.push(`emergencyContacts.contact[${index}] missing required element: relationship`);
+        } else if (!['Parent', 'Guardian', 'Spouse', 'Sibling', 'Other'].includes(contact.relationship)) {
+          errors.push(`Invalid emergencyContacts.contact[${index}] relationship: ${contact.relationship} (must be: Parent, Guardian, Spouse, Sibling, or Other)`);
+        }
+
+        if (contact.phoneNumber && !isValidPhone(contact.phoneNumber)) {
+          errors.push(`Invalid emergencyContacts.contact[${index}] phoneNumber format: ${contact.phoneNumber}`);
+        }
+
+        if (contact.email && !isValidEmail(contact.email)) {
+          errors.push(`Invalid emergencyContacts.contact[${index}] email format: ${contact.email}`);
+        }
+      });
+    }
+
+    // Validate Courses
+    if (!data.courses) {
+      errors.push('Missing required element: courses');
+    } else {
+      if (!data.courses['@_totalCredits']) {
+        errors.push('courses missing required attribute: totalCredits');
+      }
+
+      const courses = Array.isArray(data.courses.course)
+        ? data.courses.course
+        : [data.courses.course];
+
+      if (courses.length > 8) {
+        errors.push(`Too many courses: ${courses.length} (maximum is 8)`);
+      }
+
+      courses.forEach((course, index) => {
+        if (!course['@_semester']) {
+          errors.push(`courses.course[${index}] missing required attribute: semester`);
+        } else if (!['Fall', 'Spring', 'Summer'].includes(course['@_semester'])) {
+          errors.push(`Invalid courses.course[${index}] semester: ${course['@_semester']} (must be: Fall, Spring, or Summer)`);
+        }
+
+        if (!course.courseCode) {
+          errors.push(`courses.course[${index}] missing required element: courseCode`);
+        } else if (!isValidCourseCode(course.courseCode)) {
+          errors.push(`Invalid courses.course[${index}] courseCode format: ${course.courseCode} (expected: 2-4 letters followed by 3-4 digits, e.g., CS101)`);
+        }
+
+        if (course.credits !== undefined && course.credits !== null) {
+          const credits = parseInt(course.credits);
+          if (isNaN(credits) || credits < 1 || credits > 6) {
+            errors.push(`Invalid courses.course[${index}] credits: ${course.credits} (must be between 1 and 6)`);
+          }
+        }
+
+        if (course.schedule) {
+          if (course.schedule.days && !['MWF', 'TTH', 'MW', 'TH', 'F', 'Daily'].includes(course.schedule.days)) {
+            errors.push(`Invalid courses.course[${index}] schedule days: ${course.schedule.days} (must be: MWF, TTH, MW, TH, F, or Daily)`);
+          }
+
+          if (course.schedule.startTime && !isValidTime(course.schedule.startTime)) {
+            errors.push(`Invalid courses.course[${index}] schedule startTime: ${course.schedule.startTime} (expected: HH:MM:SS format)`);
+          }
+
+          if (course.schedule.endTime && !isValidTime(course.schedule.endTime)) {
+            errors.push(`Invalid courses.course[${index}] schedule endTime: ${course.schedule.endTime} (expected: HH:MM:SS format)`);
+          }
+        }
+      });
+    }
+
+    // Validate Additional Info
+    if (data.additionalInfo) {
+      const ai = data.additionalInfo;
+
+      if (ai.financialAidRequired !== undefined && ai.financialAidRequired !== null) {
+        if (typeof ai.financialAidRequired !== 'boolean' && !['true', 'false'].includes(String(ai.financialAidRequired).toLowerCase())) {
+          errors.push(`Invalid financialAidRequired value: ${ai.financialAidRequired} (must be boolean: true or false)`);
+        }
+      }
+
+      if (ai.housingRequired !== undefined && ai.housingRequired !== null) {
+        if (typeof ai.housingRequired !== 'boolean' && !['true', 'false'].includes(String(ai.housingRequired).toLowerCase())) {
+          errors.push(`Invalid housingRequired value: ${ai.housingRequired} (must be boolean: true or false)`);
+        }
       }
     }
 
@@ -57,6 +323,50 @@ const validateXMLAgainstXSD = async (xmlContent, xsdPath) => {
     };
   }
 };
+
+// Helper validation functions
+function isValidDate(dateString) {
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(dateString)) return false;
+
+  const date = new Date(dateString);
+  return date instanceof Date && !isNaN(date) && dateString === date.toISOString().split('T')[0];
+}
+
+function isValidName(name) {
+  const nameRegex = /^[A-Za-z\s\-'\.]+$/;
+  return nameRegex.test(name);
+}
+
+function isValidEmail(email) {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+}
+
+function isValidPhone(phone) {
+  const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+  return phoneRegex.test(phone);
+}
+
+function isValidSSN(ssn) {
+  const ssnRegex = /^\d{3}-\d{2}-\d{4}$/;
+  return ssnRegex.test(ssn);
+}
+
+function isValidZipCode(zip) {
+  const zipRegex = /^\d{5}(-\d{4})?$/;
+  return zipRegex.test(String(zip));
+}
+
+function isValidCourseCode(code) {
+  const courseCodeRegex = /^[A-Z]{2,4}\d{3,4}$/;
+  return courseCodeRegex.test(code);
+}
+
+function isValidTime(time) {
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/;
+  return timeRegex.test(time);
+}
 
 // Manual HTML transformation function using fast-xml-parser
 const transformXMLToHTML = async (xmlContent) => {

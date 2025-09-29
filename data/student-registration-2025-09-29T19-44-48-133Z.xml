@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sr:studentRegistration xmlns:sr="http://university.edu/student-registration"
+                       registrationId="REG-1759175088133"
+                       submissionDate="2025-09-29"
+                       status="pending">
+  
+  <sr:personalInfo>
+    <sr:firstName>Test</sr:firstName>
+    <sr:lastName>Test</sr:lastName>
+    <sr:dateOfBirth>2003-10-20</sr:dateOfBirth>
+    <sr:gender>Male</sr:gender>
+    <sr:nationality>Test</sr:nationality>
+    <sr:maritalStatus>Married</sr:maritalStatus>
+  </sr:personalInfo>
+
+  <sr:academicInfo>
+    <sr:program>Bachelor</sr:program>
+    <sr:major>Test</sr:major>
+    <sr:expectedGraduationYear>2027</sr:expectedGraduationYear>
+    <sr:previousEducation level="High School">
+      <sr:institutionName>Previous School</sr:institutionName>
+      <sr:degree>High School Diploma</sr:degree>
+      <sr:graduationYear>2024</sr:graduationYear>
+    </sr:previousEducation>
+    <sr:isTransferStudent>false</sr:isTransferStudent>
+  </sr:academicInfo>
+
+  <sr:contactInfo>
+    <sr:address>
+      <sr:street>Test</sr:street>
+      <sr:city>TEst</sr:city>
+      <sr:state>TEst</sr:state>
+      <sr:zipCode>12345</sr:zipCode>
+      <sr:country>United States</sr:country>
+    </sr:address>
+    <sr:phoneNumber>+1234567890</sr:phoneNumber>
+    <sr:email>test@gmail.com</sr:email>
+  </sr:contactInfo>
+
+  <sr:emergencyContacts>
+    <sr:contact priority="Primary">
+      <sr:name>Test</sr:name>
+      <sr:relationship>Guardian</sr:relationship>
+      <sr:phoneNumber>+1234567890</sr:phoneNumber>
+    </sr:contact>
+  </sr:emergencyContacts>
+
+  <sr:courses totalCredits="3">
+    <sr:course semester="Fall">
+      <sr:courseCode>CS101</sr:courseCode>
+      <sr:courseName>12345</sr:courseName>
+      <sr:credits>3</sr:credits>
+      <sr:schedule>
+        <sr:days>TTH</sr:days>
+        <sr:startTime>09:00</sr:startTime>
+        <sr:endTime>10:00</sr:endTime>
+      </sr:schedule>
+    </sr:course>
+  </sr:courses>
+
+  <sr:additionalInfo>
+    <sr:financialAidRequired>false</sr:financialAidRequired>
+    <sr:housingRequired>false</sr:housingRequired>
+  </sr:additionalInfo>
+
+</sr:studentRegistration>
