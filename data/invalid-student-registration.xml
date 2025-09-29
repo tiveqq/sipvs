@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sr:studentRegistration xmlns:sr="http://university.edu/student-registration"
+                       registrationId="REG-2024-002"
+                       submissionDate="2024-09-15"
+                       status="pending">
+  
+  <sr:personalInfo>
+    <sr:firstName></sr:firstName> <!-- Invalid: empty name -->
+    <sr:lastName>Doe</sr:lastName>
+    <sr:dateOfBirth>2002-13-45</sr:dateOfBirth> <!-- Invalid: bad date -->
+    <sr:gender>Unknown</sr:gender> <!-- Invalid: not in enumeration -->
+    <sr:nationality>American</sr:nationality>
+    <sr:socialSecurityNumber>123456789</sr:socialSecurityNumber> <!-- Invalid: wrong format -->
+    <sr:maritalStatus>Complicated</sr:maritalStatus> <!-- Invalid: not in enumeration -->
+  </sr:personalInfo>
+
+  <sr:academicInfo>
+    <sr:program>Doctorate</sr:program> <!-- Invalid: not in enumeration -->
+    <sr:major>Computer Science</sr:major>
+    <sr:expectedGraduationYear>1800</sr:expectedGraduationYear> <!-- Invalid: year too old -->
+    <sr:previousEducation level="Elementary"> <!-- Invalid: not in enumeration -->
+      <sr:institutionName>Some School</sr:institutionName>
+      <sr:degree>High School Diploma</sr:degree>
+      <sr:graduationYear>2020</sr:graduationYear>
+      <sr:gpa>5.0</sr:gpa> <!-- Invalid: GPA too high -->
+    </sr:previousEducation>
+    <sr:gpa>-1.0</sr:gpa> <!-- Invalid: negative GPA -->
+    <sr:isTransferStudent>maybe</sr:isTransferStudent> <!-- Invalid: not boolean -->
+  </sr:academicInfo>
+
+  <sr:contactInfo>
+    <sr:address>
+      <sr:street>456 Oak Avenue</sr:street>
+      <sr:city>Chicago</sr:city>
+      <sr:state>Illinois</sr:state>
+      <sr:zipCode>ABCDE</sr:zipCode> <!-- Invalid: not numeric -->
+      <sr:country>United States</sr:country>
+    </sr:address>
+    <sr:phoneNumber>123-456-7890</sr:phoneNumber> <!-- Invalid: wrong format -->
+    <sr:email>invalid-email</sr:email> <!-- Invalid: not proper email format -->
+  </sr:contactInfo>
+
+  <sr:emergencyContacts>
+    <sr:contact priority="First"> <!-- Invalid: not in enumeration -->
+      <sr:name>Jane Doe</sr:name>
+      <sr:relationship>Friend</sr:relationship> <!-- Invalid: not in enumeration -->
+      <sr:phoneNumber>+12345678901</sr:phoneNumber>
+      <sr:email>jane.doe@email.com</sr:email>
+    </sr:contact>
+  </sr:emergencyContacts>
+
+  <sr:courses totalCredits="25"> <!-- Invalid: credits don't match sum -->
+    <sr:course semester="Winter"> <!-- Invalid: not in enumeration -->
+      <sr:courseCode>INVALID</sr:courseCode> <!-- Invalid: wrong format -->
+      <sr:courseName>Some Course</sr:courseName>
+      <sr:credits>10</sr:credits> <!-- Invalid: too many credits -->
+      <sr:instructor>Dr. Smith</sr:instructor>
+      <sr:schedule>
+        <sr:days>INVALID</sr:days> <!-- Invalid: not in enumeration -->
+        <sr:startTime>25:00:00</sr:startTime> <!-- Invalid: time doesn't exist -->
+        <sr:endTime>26:00:00</sr:endTime> <!-- Invalid: time doesn't exist -->
+        <sr:room>Room-123</sr:room>
+      </sr:schedule>
+    </sr:course>
+  </sr:courses>
+
+  <sr:additionalInfo>
+    <sr:financialAidRequired>yes</sr:financialAidRequired> <!-- Invalid: not boolean -->
+    <sr:housingRequired>no</sr:housingRequired> <!-- Invalid: not boolean -->
+  </sr:additionalInfo>
+
+</sr:studentRegistration>

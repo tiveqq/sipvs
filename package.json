@@ -1,0 +1,24 @@
+{
+  "name": "sipvs-1",
+  "version": "1.0.0",
+  "description": "XML Form Processing System - Student Registration Form",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "private": true,
+  "dependencies": {
+    "axios": "^1.12.2",
+    "express": "^5.1.0",
+    "fast-xml-parser": "^5.2.5",
+    "fs-extra": "^11.3.2",
+    "jest": "^29.7.0",
+    "multer": "^2.0.2"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4"
+  }
+}

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sr:studentRegistration xmlns:sr="http://university.edu/student-registration"
+                       registrationId="REG-2024-001"
+                       submissionDate="2024-09-15"
+                       status="pending">
+  
+  <sr:personalInfo>
+    <sr:firstName>John</sr:firstName>
+    <sr:lastName>Smith</sr:lastName>
+    <sr:middleName>Michael</sr:middleName>
+    <sr:dateOfBirth>2002-05-15</sr:dateOfBirth>
+    <sr:gender>Male</sr:gender>
+    <sr:nationality>American</sr:nationality>
+    <sr:socialSecurityNumber>123-45-6789</sr:socialSecurityNumber>
+    <sr:maritalStatus>Single</sr:maritalStatus>
+  </sr:personalInfo>
+
+  <sr:academicInfo>
+    <sr:program>Bachelor</sr:program>
+    <sr:major>Computer Science</sr:major>
+    <sr:minor>Mathematics</sr:minor>
+    <sr:expectedGraduationYear>2026</sr:expectedGraduationYear>
+    <sr:previousEducation level="High School">
+      <sr:institutionName>Lincoln High School</sr:institutionName>
+      <sr:degree>High School Diploma</sr:degree>
+      <sr:graduationYear>2020</sr:graduationYear>
+      <sr:gpa>3.85</sr:gpa>
+    </sr:previousEducation>
+    <sr:gpa>3.75</sr:gpa>
+    <sr:isTransferStudent>false</sr:isTransferStudent>
+  </sr:academicInfo>
+
+  <sr:contactInfo>
+    <sr:address>
+      <sr:street>123 Main Street</sr:street>
+      <sr:city>Springfield</sr:city>
+      <sr:state>Illinois</sr:state>
+      <sr:zipCode>62701</sr:zipCode>
+      <sr:country>United States</sr:country>
+    </sr:address>
+    <sr:phoneNumber>+12175551234</sr:phoneNumber>
+    <sr:email>john.smith@email.com</sr:email>
+    <sr:alternateEmail>j.smith.alt@gmail.com</sr:alternateEmail>
+  </sr:contactInfo>
+
+  <sr:emergencyContacts>
+    <sr:contact priority="Primary">
+      <sr:name>Mary Smith</sr:name>
+      <sr:relationship>Parent</sr:relationship>
+      <sr:phoneNumber>+12175555678</sr:phoneNumber>
+      <sr:email>mary.smith@email.com</sr:email>
+      <sr:address>
+        <sr:street>123 Main Street</sr:street>
+        <sr:city>Springfield</sr:city>
+        <sr:state>Illinois</sr:state>
+        <sr:zipCode>62701</sr:zipCode>
+        <sr:country>United States</sr:country>
+      </sr:address>
+    </sr:contact>
+    <sr:contact priority="Secondary">
+      <sr:name>Robert Smith</sr:name>
+      <sr:relationship>Parent</sr:relationship>
+      <sr:phoneNumber>+12175559876</sr:phoneNumber>
+      <sr:email>robert.smith@email.com</sr:email>
+    </sr:contact>
+  </sr:emergencyContacts>
+
+  <sr:courses totalCredits="15">
+    <sr:course semester="Fall">
+      <sr:courseCode>CS101</sr:courseCode>
+      <sr:courseName>Introduction to Computer Science</sr:courseName>
+      <sr:credits>3</sr:credits>
+      <sr:instructor>Dr. Johnson</sr:instructor>
+      <sr:schedule>
+        <sr:days>MWF</sr:days>
+        <sr:startTime>09:00:00</sr:startTime>
+        <sr:endTime>10:00:00</sr:endTime>
+        <sr:room>CS-101</sr:room>
+      </sr:schedule>
+    </sr:course>
+    <sr:course semester="Fall">
+      <sr:courseCode>MATH201</sr:courseCode>
+      <sr:courseName>Calculus I</sr:courseName>
+      <sr:credits>4</sr:credits>
+      <sr:instructor>Prof. Williams</sr:instructor>
+      <sr:schedule>
+        <sr:days>TTH</sr:days>
+        <sr:startTime>11:00:00</sr:startTime>
+        <sr:endTime>12:30:00</sr:endTime>
+        <sr:room>MATH-205</sr:room>
+      </sr:schedule>
+    </sr:course>
+    <sr:course semester="Fall">
+      <sr:courseCode>ENG101</sr:courseCode>
+      <sr:courseName>English Composition</sr:courseName>
+      <sr:credits>3</sr:credits>
+      <sr:instructor>Dr. Brown</sr:instructor>
+      <sr:schedule>
+        <sr:days>MW</sr:days>
+        <sr:startTime>14:00:00</sr:startTime>
+        <sr:endTime>15:30:00</sr:endTime>
+        <sr:room>ENG-102</sr:room>
+      </sr:schedule>
+    </sr:course>
+    <sr:course semester="Fall">
+      <sr:courseCode>PHYS101</sr:courseCode>
+      <sr:courseName>General Physics I</sr:courseName>
+      <sr:credits>4</sr:credits>
+      <sr:instructor>Dr. Davis</sr:instructor>
+      <sr:schedule>
+        <sr:days>MWF</sr:days>
+        <sr:startTime>13:00:00</sr:startTime>
+        <sr:endTime>14:00:00</sr:endTime>
+        <sr:room>PHYS-201</sr:room>
+      </sr:schedule>
+    </sr:course>
+    <sr:course semester="Fall">
+      <sr:courseCode>HIST101</sr:courseCode>
+      <sr:courseName>World History</sr:courseName>
+      <sr:credits>1</sr:credits>
+      <sr:instructor>Prof. Miller</sr:instructor>
+      <sr:schedule>
+        <sr:days>F</sr:days>
+        <sr:startTime>10:00:00</sr:startTime>
+        <sr:endTime>11:00:00</sr:endTime>
+        <sr:room>HIST-101</sr:room>
+      </sr:schedule>
+    </sr:course>
+  </sr:courses>
+
+  <sr:additionalInfo>
+    <sr:specialNeeds>None</sr:specialNeeds>
+    <sr:extracurricularActivities>Chess Club, Programming Club</sr:extracurricularActivities>
+    <sr:workExperience>Part-time tutor for high school students</sr:workExperience>
+    <sr:financialAidRequired>true</sr:financialAidRequired>
+    <sr:housingRequired>true</sr:housingRequired>
+  </sr:additionalInfo>
+
+</sr:studentRegistration>

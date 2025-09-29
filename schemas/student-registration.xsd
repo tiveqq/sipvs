@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://university.edu/student-registration"
+           xmlns:sr="http://university.edu/student-registration"
+           elementFormDefault="qualified">
+
+  <!-- Root element -->
+  <xs:element name="studentRegistration" type="sr:StudentRegistrationType"/>
+
+  <!-- Main student registration type -->
+  <xs:complexType name="StudentRegistrationType">
+    <xs:sequence>
+      <xs:element name="personalInfo" type="sr:PersonalInfoType"/>
+      <xs:element name="academicInfo" type="sr:AcademicInfoType"/>
+      <xs:element name="contactInfo" type="sr:ContactInfoType"/>
+      <xs:element name="emergencyContacts" type="sr:EmergencyContactsType"/>
+      <xs:element name="courses" type="sr:CoursesType"/>
+      <xs:element name="additionalInfo" type="sr:AdditionalInfoType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="registrationId" type="xs:string" use="required"/>
+    <xs:attribute name="submissionDate" type="xs:date" use="required"/>
+    <xs:attribute name="status" type="sr:RegistrationStatusType" default="pending"/>
+  </xs:complexType>
+
+  <!-- Personal Information -->
+  <xs:complexType name="PersonalInfoType">
+    <xs:sequence>
+      <xs:element name="firstName" type="sr:NameType"/>
+      <xs:element name="lastName" type="sr:NameType"/>
+      <xs:element name="middleName" type="sr:NameType" minOccurs="0"/>
+      <xs:element name="dateOfBirth" type="xs:date"/>
+      <xs:element name="gender" type="sr:GenderType"/>
+      <xs:element name="nationality" type="xs:string"/>
+      <xs:element name="socialSecurityNumber" type="sr:SSNType" minOccurs="0"/>
+      <xs:element name="maritalStatus" type="sr:MaritalStatusType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Academic Information -->
+  <xs:complexType name="AcademicInfoType">
+    <xs:sequence>
+      <xs:element name="program" type="sr:ProgramType"/>
+      <xs:element name="major" type="xs:string"/>
+      <xs:element name="minor" type="xs:string" minOccurs="0"/>
+      <xs:element name="expectedGraduationYear" type="sr:YearType"/>
+      <xs:element name="previousEducation" type="sr:PreviousEducationType" maxOccurs="unbounded"/>
+      <xs:element name="gpa" type="sr:GPAType" minOccurs="0"/>
+      <xs:element name="isTransferStudent" type="xs:boolean"/>
+      <xs:element name="transferCredits" type="xs:int" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Contact Information -->
+  <xs:complexType name="ContactInfoType">
+    <xs:sequence>
+      <xs:element name="address" type="sr:AddressType"/>
+      <xs:element name="phoneNumber" type="sr:PhoneType"/>
+      <xs:element name="alternatePhone" type="sr:PhoneType" minOccurs="0"/>
+      <xs:element name="email" type="sr:EmailType"/>
+      <xs:element name="alternateEmail" type="sr:EmailType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Emergency Contacts (Repeating Section) -->
+  <xs:complexType name="EmergencyContactsType">
+    <xs:sequence>
+      <xs:element name="contact" type="sr:EmergencyContactType" maxOccurs="3"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="EmergencyContactType">
+    <xs:sequence>
+      <xs:element name="name" type="sr:NameType"/>
+      <xs:element name="relationship" type="sr:RelationshipType"/>
+      <xs:element name="phoneNumber" type="sr:PhoneType"/>
+      <xs:element name="email" type="sr:EmailType" minOccurs="0"/>
+      <xs:element name="address" type="sr:AddressType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="priority" type="sr:PriorityType" use="required"/>
+  </xs:complexType>
+
+  <!-- Courses (Repeating Section) -->
+  <xs:complexType name="CoursesType">
+    <xs:sequence>
+      <xs:element name="course" type="sr:CourseType" maxOccurs="8"/>
+    </xs:sequence>
+    <xs:attribute name="totalCredits" type="xs:int" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="CourseType">
+    <xs:sequence>
+      <xs:element name="courseCode" type="sr:CourseCodeType"/>
+      <xs:element name="courseName" type="xs:string"/>
+      <xs:element name="credits" type="sr:CreditsType"/>
+      <xs:element name="instructor" type="xs:string" minOccurs="0"/>
+      <xs:element name="schedule" type="sr:ScheduleType"/>
+    </xs:sequence>
+    <xs:attribute name="semester" type="sr:SemesterType" use="required"/>
+  </xs:complexType>
+
+  <!-- Previous Education (Repeating Section) -->
+  <xs:complexType name="PreviousEducationType">
+    <xs:sequence>
+      <xs:element name="institutionName" type="xs:string"/>
+      <xs:element name="degree" type="sr:DegreeType"/>
+      <xs:element name="graduationYear" type="sr:YearType"/>
+      <xs:element name="gpa" type="sr:GPAType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="level" type="sr:EducationLevelType" use="required"/>
+  </xs:complexType>
+
+  <!-- Additional Information -->
+  <xs:complexType name="AdditionalInfoType">
+    <xs:sequence>
+      <xs:element name="specialNeeds" type="xs:string" minOccurs="0"/>
+      <xs:element name="medicalConditions" type="xs:string" minOccurs="0"/>
+      <xs:element name="extracurricularActivities" type="xs:string" minOccurs="0"/>
+      <xs:element name="workExperience" type="xs:string" minOccurs="0"/>
+      <xs:element name="financialAidRequired" type="xs:boolean"/>
+      <xs:element name="housingRequired" type="xs:boolean"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Address Type -->
+  <xs:complexType name="AddressType">
+    <xs:sequence>
+      <xs:element name="street" type="xs:string"/>
+      <xs:element name="city" type="xs:string"/>
+      <xs:element name="state" type="xs:string"/>
+      <xs:element name="zipCode" type="sr:ZipCodeType"/>
+      <xs:element name="country" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Schedule Type -->
+  <xs:complexType name="ScheduleType">
+    <xs:sequence>
+      <xs:element name="days" type="sr:DaysType"/>
+      <xs:element name="startTime" type="xs:time"/>
+      <xs:element name="endTime" type="xs:time"/>
+      <xs:element name="room" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Simple Types and Restrictions -->
+  <xs:simpleType name="NameType">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1"/>
+      <xs:maxLength value="50"/>
+      <xs:pattern value="[A-Za-z\s\-'\.]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="EmailType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="PhoneType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\+?[1-9]\d{1,14}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="SSNType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{3}-\d{2}-\d{4}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ZipCodeType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{5}(-\d{4})?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CourseCodeType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Z]{2,4}\d{3,4}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="GPAType">
+    <xs:restriction base="xs:decimal">
+      <xs:minInclusive value="0.0"/>
+      <xs:maxInclusive value="4.0"/>
+      <xs:fractionDigits value="2"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CreditsType">
+    <xs:restriction base="xs:int">
+      <xs:minInclusive value="1"/>
+      <xs:maxInclusive value="6"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="YearType">
+    <xs:restriction base="xs:int">
+      <xs:minInclusive value="1900"/>
+      <xs:maxInclusive value="2030"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Enumeration Types -->
+  <xs:simpleType name="GenderType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Male"/>
+      <xs:enumeration value="Female"/>
+      <xs:enumeration value="Other"/>
+      <xs:enumeration value="Prefer not to say"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="MaritalStatusType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Single"/>
+      <xs:enumeration value="Married"/>
+      <xs:enumeration value="Divorced"/>
+      <xs:enumeration value="Widowed"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ProgramType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Bachelor"/>
+      <xs:enumeration value="Master"/>
+      <xs:enumeration value="PhD"/>
+      <xs:enumeration value="Certificate"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="RelationshipType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Parent"/>
+      <xs:enumeration value="Guardian"/>
+      <xs:enumeration value="Spouse"/>
+      <xs:enumeration value="Sibling"/>
+      <xs:enumeration value="Other"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="PriorityType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Primary"/>
+      <xs:enumeration value="Secondary"/>
+      <xs:enumeration value="Tertiary"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="SemesterType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Fall"/>
+      <xs:enumeration value="Spring"/>
+      <xs:enumeration value="Summer"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="DegreeType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="High School Diploma"/>
+      <xs:enumeration value="Associate"/>
+      <xs:enumeration value="Bachelor"/>
+      <xs:enumeration value="Master"/>
+      <xs:enumeration value="PhD"/>
+      <xs:enumeration value="Other"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="EducationLevelType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="High School"/>
+      <xs:enumeration value="Undergraduate"/>
+      <xs:enumeration value="Graduate"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="DaysType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="MWF"/>
+      <xs:enumeration value="TTH"/>
+      <xs:enumeration value="MW"/>
+      <xs:enumeration value="TH"/>
+      <xs:enumeration value="F"/>
+      <xs:enumeration value="Daily"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="RegistrationStatusType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="pending"/>
+      <xs:enumeration value="approved"/>
+      <xs:enumeration value="rejected"/>
+      <xs:enumeration value="incomplete"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>

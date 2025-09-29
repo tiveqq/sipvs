@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Registration Form - XML Processing System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>University Student Registration Form</h1>
+            <p class="subtitle">XML Form Processing System</p>
+        </header>
+
+        <div class="form-container">
+            <form id="registrationForm">
+                <!-- Personal Information Section -->
+                <section class="form-section">
+                    <h2>Personal Information</h2>
+                    <div class="field-group">
+                        <div class="field">
+                            <label for="firstName">First Name *</label>
+                            <input type="text" id="firstName" name="firstName" required 
+                                   pattern="[A-Za-z\s\-'\.]{1,50}" 
+                                   title="Only letters, spaces, hyphens, apostrophes, and periods allowed (1-50 characters)">
+                            <span class="tooltip">Enter your legal first name</span>
+                        </div>
+                        <div class="field">
+                            <label for="middleName">Middle Name</label>
+                            <input type="text" id="middleName" name="middleName" 
+                                   pattern="[A-Za-z\s\-'\.]{1,50}"
+                                   title="Only letters, spaces, hyphens, apostrophes, and periods allowed (1-50 characters)">
+                            <span class="tooltip">Optional middle name or initial</span>
+                        </div>
+                        <div class="field">
+                            <label for="lastName">Last Name *</label>
+                            <input type="text" id="lastName" name="lastName" required 
+                                   pattern="[A-Za-z\s\-'\.]{1,50}"
+                                   title="Only letters, spaces, hyphens, apostrophes, and periods allowed (1-50 characters)">
+                            <span class="tooltip">Enter your legal last name</span>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <div class="field">
+                            <label for="dateOfBirth">Date of Birth *</label>
+                            <input type="date" id="dateOfBirth" name="dateOfBirth" required>
+                            <span class="tooltip">Must be at least 16 years old</span>
+                        </div>
+                        <div class="field">
+                            <label for="gender">Gender *</label>
+                            <select id="gender" name="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                                <option value="Prefer not to say">Prefer not to say</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="nationality">Nationality *</label>
+                            <input type="text" id="nationality" name="nationality" required>
+                            <span class="tooltip">Your country of citizenship</span>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <div class="field">
+                            <label for="socialSecurityNumber">Social Security Number</label>
+                            <input type="text" id="socialSecurityNumber" name="socialSecurityNumber" 
+                                   pattern="\d{3}-\d{2}-\d{4}" placeholder="123-45-6789"
+                                   title="Format: 123-45-6789">
+                            <span class="tooltip">Optional - Format: XXX-XX-XXXX</span>
+                        </div>
+                        <div class="field">
+                            <label for="maritalStatus">Marital Status *</label>
+                            <select id="maritalStatus" name="maritalStatus" required>
+                                <option value="">Select Status</option>
+                                <option value="Single">Single</option>
+                                <option value="Married">Married</option>
+                                <option value="Divorced">Divorced</option>
+                                <option value="Widowed">Widowed</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Academic Information Section -->
+                <section class="form-section">
+                    <h2>Academic Information</h2>
+                    <div class="field-group">
+                        <div class="field">
+                            <label for="program">Program *</label>
+                            <select id="program" name="program" required>
+                                <option value="">Select Program</option>
+                                <option value="Bachelor">Bachelor's Degree</option>
+                                <option value="Master">Master's Degree</option>
+                                <option value="PhD">PhD</option>
+                                <option value="Certificate">Certificate Program</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="major">Major *</label>
+                            <input type="text" id="major" name="major" required>
+                            <span class="tooltip">Your primary field of study</span>
+                        </div>
+                        <div class="field">
+                            <label for="minor">Minor</label>
+                            <input type="text" id="minor" name="minor">
+                            <span class="tooltip">Optional secondary field of study</span>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <div class="field">
+                            <label for="expectedGraduationYear">Expected Graduation Year *</label>
+                            <input type="number" id="expectedGraduationYear" name="expectedGraduationYear" 
+                                   min="2024" max="2030" required>
+                        </div>
+                        <div class="field">
+                            <label for="gpa">Current GPA</label>
+                            <input type="number" id="gpa" name="gpa" min="0" max="4" step="0.01" 
+                                   placeholder="0.00">
+                            <span class="tooltip">Scale: 0.00 - 4.00</span>
+                        </div>
+                        <div class="field">
+                            <label for="isTransferStudent">Transfer Student?</label>
+                            <select id="isTransferStudent" name="isTransferStudent">
+                                <option value="false">No</option>
+                                <option value="true">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field" id="transferCreditsField" style="display: none;">
+                        <label for="transferCredits">Transfer Credits</label>
+                        <input type="number" id="transferCredits" name="transferCredits" min="0" max="120">
+                        <span class="tooltip">Number of credits transferring from previous institution</span>
+                    </div>
+                </section>
+
+                <!-- Contact Information Section -->
+                <section class="form-section">
+                    <h2>Contact Information</h2>
+                    <div class="field-group">
+                        <div class="field full-width">
+                            <label for="street">Street Address *</label>
+                            <input type="text" id="street" name="street" required>
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field">
+                            <label for="city">City *</label>
+                            <input type="text" id="city" name="city" required>
+                        </div>
+                        <div class="field">
+                            <label for="state">State/Province *</label>
+                            <input type="text" id="state" name="state" required>
+                        </div>
+                        <div class="field">
+                            <label for="zipCode">ZIP/Postal Code *</label>
+                            <input type="text" id="zipCode" name="zipCode" required 
+                                   pattern="\d{5}(-\d{4})?" placeholder="12345 or 12345-6789"
+                                   title="Format: 12345 or 12345-6789">
+                        </div>
+                        <div class="field">
+                            <label for="country">Country *</label>
+                            <input type="text" id="country" name="country" required value="United States">
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <div class="field">
+                            <label for="phoneNumber">Phone Number *</label>
+                            <input type="tel" id="phoneNumber" name="phoneNumber" required 
+                                   pattern="\+?[1-9]\d{1,14}" placeholder="+1234567890"
+                                   title="International format recommended: +1234567890">
+                        </div>
+                        <div class="field">
+                            <label for="alternatePhone">Alternate Phone</label>
+                            <input type="tel" id="alternatePhone" name="alternatePhone" 
+                                   pattern="\+?[1-9]\d{1,14}" placeholder="+1234567890">
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <div class="field">
+                            <label for="email">Email Address *</label>
+                            <input type="email" id="email" name="email" required>
+                            <span class="tooltip">Primary email for university communications</span>
+                        </div>
+                        <div class="field">
+                            <label for="alternateEmail">Alternate Email</label>
+                            <input type="email" id="alternateEmail" name="alternateEmail">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Emergency Contacts Section -->
+                <section class="form-section">
+                    <h2>Emergency Contacts</h2>
+                    <div id="emergencyContactsContainer">
+                        <div class="emergency-contact" data-index="0">
+                            <h3>Primary Emergency Contact</h3>
+                            <div class="field-group">
+                                <div class="field">
+                                    <label>Contact Name *</label>
+                                    <input type="text" name="emergencyContacts[0][name]" required 
+                                           pattern="[A-Za-z\s\-'\.]{1,50}">
+                                </div>
+                                <div class="field">
+                                    <label>Relationship *</label>
+                                    <select name="emergencyContacts[0][relationship]" required>
+                                        <option value="">Select Relationship</option>
+                                        <option value="Parent">Parent</option>
+                                        <option value="Guardian">Guardian</option>
+                                        <option value="Spouse">Spouse</option>
+                                        <option value="Sibling">Sibling</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label>Phone Number *</label>
+                                    <input type="tel" name="emergencyContacts[0][phoneNumber]" required 
+                                           pattern="\+?[1-9]\d{1,14}">
+                                </div>
+                                <div class="field">
+                                    <label>Email</label>
+                                    <input type="email" name="emergencyContacts[0][email]">
+                                </div>
+                            </div>
+                            <input type="hidden" name="emergencyContacts[0][priority]" value="Primary">
+                        </div>
+                    </div>
+                    <button type="button" id="addEmergencyContact" class="btn-secondary">Add Another Emergency Contact</button>
+                </section>
+
+                <!-- Courses Section -->
+                <section class="form-section">
+                    <h2>Course Registration</h2>
+                    <div class="field">
+                        <label for="totalCredits">Total Credits: <span id="totalCreditsDisplay">0</span></label>
+                        <input type="hidden" id="totalCredits" name="totalCredits" value="0">
+                        <span class="tooltip">Maximum 18 credits per semester</span>
+                    </div>
+                    <div id="coursesContainer">
+                        <div class="course" data-index="0">
+                            <h3>Course 1</h3>
+                            <div class="field-group">
+                                <div class="field">
+                                    <label>Course Code *</label>
+                                    <input type="text" name="courses[0][courseCode]" required 
+                                           pattern="[A-Z]{2,4}\d{3,4}" placeholder="CS101"
+                                           title="Format: 2-4 letters followed by 3-4 digits">
+                                </div>
+                                <div class="field">
+                                    <label>Course Name *</label>
+                                    <input type="text" name="courses[0][courseName]" required>
+                                </div>
+                                <div class="field">
+                                    <label>Credits *</label>
+                                    <input type="number" name="courses[0][credits]" required 
+                                           min="1" max="6" value="3" class="credits-input">
+                                </div>
+                                <div class="field">
+                                    <label>Semester *</label>
+                                    <select name="courses[0][semester]" required>
+                                        <option value="Fall">Fall</option>
+                                        <option value="Spring">Spring</option>
+                                        <option value="Summer">Summer</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="field-group">
+                                <div class="field">
+                                    <label>Instructor</label>
+                                    <input type="text" name="courses[0][instructor]">
+                                </div>
+                                <div class="field">
+                                    <label>Days *</label>
+                                    <select name="courses[0][days]" required>
+                                        <option value="MWF">Monday, Wednesday, Friday</option>
+                                        <option value="TTH">Tuesday, Thursday</option>
+                                        <option value="MW">Monday, Wednesday</option>
+                                        <option value="TH">Tuesday, Thursday</option>
+                                        <option value="F">Friday</option>
+                                        <option value="Daily">Daily</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label>Start Time *</label>
+                                    <input type="time" name="courses[0][startTime]" required value="09:00">
+                                </div>
+                                <div class="field">
+                                    <label>End Time *</label>
+                                    <input type="time" name="courses[0][endTime]" required value="10:00">
+                                </div>
+                                <div class="field">
+                                    <label>Room</label>
+                                    <input type="text" name="courses[0][room]" placeholder="Building-Room">
+                                </div>
+                            </div>
+                            <button type="button" class="btn-danger remove-course" style="display: none;">Remove Course</button>
+                        </div>
+                    </div>
+                    <button type="button" id="addCourse" class="btn-secondary">Add Another Course</button>
+                </section>
+
+                <!-- Additional Information Section -->
+                <section class="form-section">
+                    <h2>Additional Information</h2>
+                    <div class="field-group">
+                        <div class="field full-width">
+                            <label for="specialNeeds">Special Needs/Accommodations</label>
+                            <textarea id="specialNeeds" name="additionalInfo[specialNeeds]" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field full-width">
+                            <label for="medicalConditions">Medical Conditions</label>
+                            <textarea id="medicalConditions" name="additionalInfo[medicalConditions]" rows="3"></textarea>
+                            <span class="tooltip">Information for emergency situations only</span>
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field full-width">
+                            <label for="extracurricularActivities">Extracurricular Activities</label>
+                            <textarea id="extracurricularActivities" name="additionalInfo[extracurricularActivities]" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field full-width">
+                            <label for="workExperience">Work Experience</label>
+                            <textarea id="workExperience" name="additionalInfo[workExperience]" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field">
+                            <label for="financialAidRequired">Financial Aid Required?</label>
+                            <select id="financialAidRequired" name="additionalInfo[financialAidRequired]">
+                                <option value="false">No</option>
+                                <option value="true">Yes</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="housingRequired">Housing Required?</label>
+                            <select id="housingRequired" name="additionalInfo[housingRequired]">
+                                <option value="false">No</option>
+                                <option value="true">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Action Buttons -->
+                <section class="form-actions">
+                    <button type="submit" class="btn-primary">Save XML</button>
+                    <button type="button" id="validateXmlBtn" class="btn-secondary" disabled>Validate XML against XSD</button>
+                    <button type="button" id="transformXmlBtn" class="btn-secondary" disabled>Transform XML to HTML</button>
+                    <button type="button" id="loadSampleBtn" class="btn-info">Load Sample Data</button>
+                </section>
+            </form>
+
+            <!-- File Selection Section -->
+            <section id="fileSelectionSection" class="file-selection-section" style="display: none;">
+                <h2>Saved XML Files</h2>
+                <div class="field">
+                    <label for="xmlFileSelect">Select XML File:</label>
+                    <select id="xmlFileSelect">
+                        <option value="">Choose a file...</option>
+                    </select>
+                    <button type="button" id="refreshFilesBtn" class="btn-info">Refresh List</button>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="results-section" style="display: none;">
+                <h2>Results</h2>
+                <div id="resultsContent"></div>
+            </section>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
