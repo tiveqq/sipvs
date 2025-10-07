@@ -280,16 +280,26 @@ const validateXMLAgainstXSD = async (xmlContent, xsdPath) => {
         }
 
         if (course.schedule) {
-          if (course.schedule.days && !['MWF', 'TTH', 'MW', 'TH', 'F', 'Daily'].includes(course.schedule.days)) {
-            errors.push(`Invalid courses.course[${index}] schedule days: ${course.schedule.days} (must be: MWF, TTH, MW, TH, F, or Daily)`);
+          if (
+              course.schedule.days &&
+              !['MWF', 'TTH', 'MW', 'TH', 'F', 'Daily'].includes(course.schedule.days)
+          ) {
+            errors.push(
+                `Invalid courses.course[${index}] schedule days: ${course.schedule.days} (must be: MWF, TTH, MW, TH, F, or Daily)`
+            );
           }
 
+          // Update expected format to HH:MM
           if (course.schedule.startTime && !isValidTime(course.schedule.startTime)) {
-            errors.push(`Invalid courses.course[${index}] schedule startTime: ${course.schedule.startTime} (expected: HH:MM:SS format)`);
+            errors.push(
+                `Invalid courses.course[${index}] schedule startTime: ${course.schedule.startTime} (expected: HH:MM format)`
+            );
           }
 
           if (course.schedule.endTime && !isValidTime(course.schedule.endTime)) {
-            errors.push(`Invalid courses.course[${index}] schedule endTime: ${course.schedule.endTime} (expected: HH:MM:SS format)`);
+            errors.push(
+                `Invalid courses.course[${index}] schedule endTime: ${course.schedule.endTime} (expected: HH:MM format)`
+            );
           }
         }
       });
@@ -364,7 +374,8 @@ function isValidCourseCode(code) {
 }
 
 function isValidTime(time) {
-  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/;
+  // Updated to match XSD schema: HH:MM format (24-hour clock)
+  const timeRegex = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
   return timeRegex.test(time);
 }
 

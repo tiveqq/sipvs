@@ -73,8 +73,8 @@
       <sr:instructor>Dr. Johnson</sr:instructor>
       <sr:schedule>
         <sr:days>MWF</sr:days>
-        <sr:startTime>09:00:00</sr:startTime>
-        <sr:endTime>10:00:00</sr:endTime>
+        <sr:startTime>09:00</sr:startTime>
+        <sr:endTime>10:00</sr:endTime>
         <sr:room>CS-101</sr:room>
       </sr:schedule>
     </sr:course>
@@ -85,8 +85,8 @@
       <sr:instructor>Prof. Williams</sr:instructor>
       <sr:schedule>
         <sr:days>TTH</sr:days>
-        <sr:startTime>11:00:00</sr:startTime>
-        <sr:endTime>12:30:00</sr:endTime>
+        <sr:startTime>11:00</sr:startTime>
+        <sr:endTime>12:30</sr:endTime>
         <sr:room>MATH-205</sr:room>
       </sr:schedule>
     </sr:course>
@@ -97,8 +97,8 @@
       <sr:instructor>Dr. Brown</sr:instructor>
       <sr:schedule>
         <sr:days>MW</sr:days>
-        <sr:startTime>14:00:00</sr:startTime>
-        <sr:endTime>15:30:00</sr:endTime>
+        <sr:startTime>14:00</sr:startTime>
+        <sr:endTime>15:30</sr:endTime>
         <sr:room>ENG-102</sr:room>
       </sr:schedule>
     </sr:course>
@@ -109,8 +109,8 @@
       <sr:instructor>Dr. Davis</sr:instructor>
       <sr:schedule>
         <sr:days>MWF</sr:days>
-        <sr:startTime>13:00:00</sr:startTime>
-        <sr:endTime>14:00:00</sr:endTime>
+        <sr:startTime>13:00</sr:startTime>
+        <sr:endTime>14:00</sr:endTime>
         <sr:room>PHYS-201</sr:room>
       </sr:schedule>
     </sr:course>
@@ -121,8 +121,8 @@
       <sr:instructor>Prof. Miller</sr:instructor>
       <sr:schedule>
         <sr:days>F</sr:days>
-        <sr:startTime>10:00:00</sr:startTime>
-        <sr:endTime>11:00:00</sr:endTime>
+        <sr:startTime>10:00</sr:startTime>
+        <sr:endTime>11:00</sr:endTime>
         <sr:room>HIST-101</sr:room>
       </sr:schedule>
     </sr:course>

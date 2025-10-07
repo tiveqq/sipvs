@@ -132,12 +132,20 @@
     </xs:sequence>
   </xs:complexType>
 
+  <!-- Course Time -->
+  <xs:simpleType name="HourMinuteType">
+    <xs:restriction base="xs:string">
+      <!-- Pattern: HH:MM (24-hour clock) -->
+      <xs:pattern value="([01][0-9]|2[0-3]):[0-5][0-9]"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <!-- Schedule Type -->
   <xs:complexType name="ScheduleType">
     <xs:sequence>
       <xs:element name="days" type="sr:DaysType"/>
-      <xs:element name="startTime" type="xs:time"/>
-      <xs:element name="endTime" type="xs:time"/>
+      <xs:element name="startTime" type="sr:HourMinuteType"/>
+      <xs:element name="endTime" type="sr:HourMinuteType"/>
       <xs:element name="room" type="xs:string" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
