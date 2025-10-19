@@ -1138,6 +1138,177 @@ function buildXMLFromFormData(formData) {
   return xml;
 }
 
+// ============================================================================
+// SIGNING ENDPOINTS - Slovak eIDAS Digital Signing Integration
+// ============================================================================
+
+/**
+ * Serve certificate files securely
+ * GET /api/certificate/:filename
+ */
+app.get('/api/certificate/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+
+    // Whitelist allowed certificate files (only public certificates and CRL)
+    const allowedFiles = [
+      'FIITPodpisovatel.cer',  // Public certificate
+      'dtccert.cer',            // Issuing authority certificate
+      'crl.txt'                 // CRL URL
+    ];
+
+    // Security: Prevent access to private key
+    if (filename === 'FIITPodpisovatel.pfx' || filename === 'FIITPodpisovatel.txt') {
+      return res.status(403).json({
+        success: false,
+        error: 'Access to private key files is not allowed'
+      });
+    }
+
+    // Security: Check whitelist
+    if (!allowedFiles.includes(filename)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied - file not in whitelist'
+      });
+    }
+
+    const filepath = path.join('certificate', filename);
+
+    // Check if file exists
+    if (!await fs.pathExists(filepath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Certificate file not found'
+      });
+    }
+
+    // Determine content type based on extension
+    const ext = path.extname(filename).toLowerCase();
+    let contentType = 'application/octet-stream';
+
+    if (ext === '.cer') {
+      contentType = 'application/x-x509-ca-cert';
+    } else if (ext === '.txt') {
+      contentType = 'text/plain; charset=utf-8';
+    }
+
+    // Read and send file
+    const fileContent = await fs.readFile(filepath);
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.send(fileContent);
+
+  } catch (error) {
+    console.error('Certificate serving error:', error);
+    res.status(500).json({
+      success: false,
+      error: `Failed to serve certificate: ${error.message}`
+    });
+  }
+});
+
+/**
+ * Prepare signing payload
+ * POST /api/prepare-signing
+ */
+app.post('/api/prepare-signing', async (req, res) => {
+  try {
+    const { filename } = req.body;
+
+    // Validate input
+    if (!filename) {
+      return res.status(400).json({
+        success: false,
+        error: 'Filename is required'
+      });
+    }
+
+    // Security: Prevent directory traversal
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid filename'
+      });
+    }
+
+    // Define file paths
+    const xmlPath = path.join('data', filename);
+    const xsdPath = path.join('schemas', 'student-registration.xsd');
+    const xslPath = path.join('stylesheets', 'student-registration.xsl');
+
+    // Check if XML file exists
+    if (!await fs.pathExists(xmlPath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'XML file not found. Please save the form first.'
+      });
+    }
+
+    // Check if schema files exist
+    if (!await fs.pathExists(xsdPath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'XSD schema file not found'
+      });
+    }
+
+    if (!await fs.pathExists(xslPath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'XSLT stylesheet file not found'
+      });
+    }
+
+    // Read all files
+    const xmlContent = await fs.readFile(xmlPath, 'utf8');
+    const xsdContent = await fs.readFile(xsdPath, 'utf8');
+    const xslContent = await fs.readFile(xslPath, 'utf8');
+
+    // Generate unique identifier
+    const timestamp = Date.now();
+    const identifier = `student-registration-${timestamp}`;
+
+    // Create XMLDataContainer structure
+    const xmlDataContainer = createXMLDataContainer(
+      xmlContent,
+      xsdContent,
+      xslContent,
+      identifier
+    );
+
+    // Encode as Base64
+    const xmlBase64 = Buffer.from(xmlDataContainer, 'utf8').toString('base64');
+    const xsdBase64 = Buffer.from(xsdContent, 'utf8').toString('base64');
+    const xslBase64 = Buffer.from(xslContent, 'utf8').toString('base64');
+
+    // Return signing payload
+    res.json({
+      success: true,
+      payload: {
+        xmlBase64: xmlBase64,
+        xsdBase64: xsdBase64,
+        xslBase64: xslBase64,
+        filename: filename,
+        identifier: identifier,
+        description: 'Student Registration Form - University Enrollment',
+        formatIdentifier: 'http://data.gov.sk/def/container/xmldatacontainer+xml/1.1'
+      }
+    });
+
+  } catch (error) {
+    console.error('Signing preparation error:', error);
+    res.status(500).json({
+      success: false,
+      error: `Failed to prepare signing payload: ${error.message}`
+    });
+  }
+});
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
 // Helper function to escape XML special characters
 function escapeXML(str) {
   if (!str) return '';
@@ -1150,6 +1321,48 @@ function escapeXML(str) {
       case '"': return '&quot;';
     }
   });
+}
+
+/**
+ * Create XMLDataContainer structure for Slovak eIDAS signing
+ * Wraps XML content with embedded XSD and XSLT references
+ */
+function createXMLDataContainer(xmlContent, xsdContent, xslContent, identifier) {
+  const crypto = require('crypto');
+
+  // Calculate SHA-256 digests for XSD and XSLT
+  const xsdDigest = crypto.createHash('sha256').update(xsdContent).digest('base64');
+  const xslDigest = crypto.createHash('sha256').update(xslContent).digest('base64');
+
+  // Extract the root element from original XML
+  // Remove XML declaration if present
+  const xmlWithoutDeclaration = xmlContent.replace(/<\?xml[^?]*\?>\s*/g, '');
+
+  // IMPORTANT: Wrap XML content in CDATA to prevent XML parsing issues
+  // The XMLContent contains XML tags that would otherwise be parsed as part of the container structure
+  // CDATA tells the parser to treat the content as literal text
+  const container = `<?xml version="1.0" encoding="UTF-8"?>
+<xdc:XMLDataContainer xmlns:xdc="http://data.gov.sk/def/container/xmldatacontainer+xml/1.1">
+  <xdc:XMLData ContentType="application/xml; charset=UTF-8" Identifier="${identifier}" Version="1.0">
+    <xdc:XMLContent><![CDATA[${xmlWithoutDeclaration}]]></xdc:XMLContent>
+  </xdc:XMLData>
+  <xdc:UsedSchemasReferenced>
+    <xdc:UsedXSDReference SchemaFileIdentifier="student-registration.xsd">
+      <xdc:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+      <xdc:DigestValue>${xsdDigest}</xdc:DigestValue>
+      <xdc:TransformAlgorithm Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+    </xdc:UsedXSDReference>
+  </xdc:UsedSchemasReferenced>
+  <xdc:UsedPresentationSchemasReferenced>
+    <xdc:UsedXSLTReference PresentationSchemaFileIdentifier="student-registration.xsl">
+      <xdc:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+      <xdc:DigestValue>${xslDigest}</xdc:DigestValue>
+      <xdc:TransformAlgorithm Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+    </xdc:UsedXSLTReference>
+  </xdc:UsedPresentationSchemasReferenced>
+</xdc:XMLDataContainer>`;
+
+  return container;
 }
 
 // Start server

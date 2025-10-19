@@ -1,0 +1,1 @@
+https://testpki.ditec.sk/CertGen2/Data/pavlik/DITEC%20Test%20CA/Crls/DITEC%20Test%20CA.crl

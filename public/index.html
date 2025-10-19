@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Registration Form - XML Processing System</title>
     <link rel="stylesheet" href="styles.css">
+
+    <!-- D.Bridge JS v1.0 Libraries for Slovak eIDAS Signing -->
+    <script src="https://www.slovensko.sk/static/zep/dbridge_js/v1.0/config.js"></script>
+    <script src="https://www.slovensko.sk/static/zep/dbridge_js/v1.0/dCommon.min.js"></script>
+    <script src="https://www.slovensko.sk/static/zep/dbridge_js/v1.0/dSigXadesBp.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -358,6 +363,7 @@
                     <button type="submit" class="btn-primary">Save XML</button>
                     <button type="button" id="validateXmlBtn" class="btn-secondary" disabled>Validate XML against XSD</button>
                     <button type="button" id="transformXmlBtn" class="btn-secondary" disabled>Transform XML to HTML</button>
+                    <button type="button" id="signXmlBtn" class="btn-success" disabled>🔐 Sign</button>
                     <button type="button" id="loadSampleBtn" class="btn-info">Load Sample Data</button>
                 </section>
             </form>

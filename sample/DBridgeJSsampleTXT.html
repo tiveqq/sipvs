@@ -1,0 +1,33 @@
+<html>
+	<head>
+		<script type="text/javascript" src="https://www.slovensko.sk/static/zep/dbridge_js/v1.0/config.js"></script>
+		<script type="text/javascript" src="https://www.slovensko.sk/static/zep/dbridge_js/v1.0/dCommon.min.js"></script>
+		<script type="text/javascript" src="https://www.slovensko.sk/static/zep/dbridge_js/v1.0/dSigXadesBp.min.js"></script>
+	</head>
+	<body>
+		<script>
+			function Callback(onSuccess) {
+				this.onSuccess = onSuccess;
+				this.onError = function(e) {
+					alert("Chyba: " + e);
+				}
+			}					
+		
+			ditec.dSigXadesBpJs.deploy(null, new Callback(function(){			
+				
+				ditec.dSigXadesBpJs.initialize(new Callback(function(){
+				
+					ditec.dSigXadesBpJs.addTxtObject("objectId", "objectDescription", "Hello world", "http://objectFormatIdentifier", new Callback(function(){
+				
+						ditec.dSigXadesBpJs.sign("signatureId", "http://www.w3.org/2001/04/xmlenc#sha256", "", new Callback(function(){
+					
+							ditec.dSigXadesBpJs.getSignatureWithASiCEnvelopeBase64(new Callback(function(ret) {
+								alert(ret);
+							}));
+						}));
+					}));
+				}));				
+			}));				
+		</script>
+	</body>		
+</html>

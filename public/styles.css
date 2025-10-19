@@ -179,6 +179,7 @@ body {
 .btn-primary,
 .btn-secondary,
 .btn-danger,
+.btn-success,
 .btn-info {
     padding: 12px 24px;
     border: none;
@@ -228,6 +229,17 @@ body {
     background: linear-gradient(135deg, #c0392b, #a93226);
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: white;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #218838, #1e7e34);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
 }
 
 .btn-info {
@@ -390,6 +402,7 @@ body {
     .btn-primary,
     .btn-secondary,
     .btn-danger,
+    .btn-success,
     .btn-info {
         width: 100%;
         margin: 5px 0;
