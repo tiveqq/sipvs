@@ -805,115 +805,164 @@ function signWithDBridge(payload) {
                     function() {
                         debugLog('STEP 2', 'Signing session initialized');
 
-                        // Step 3: Add XML object to be signed
-                        debugLog('STEP 3', 'Adding XML object to signing queue...');
+                        // Step 3: Add document object to be signed
+                        debugLog('STEP 3', 'Adding document object to signing queue...');
                         showResult('Step 3/5: Preparing document...', 'info');
 
                         // ============================================
-                        // CRITICAL DISCOVERY: You're using D.Bridge JS v1.0
-                        // The xslMediaDestinationTypeDescription parameter was added in v1.5.2.0!
-                        // For v1.0, addXmlObject might only have 5 parameters (without xslMediaDestinationTypeDescription)
+                        // Document Object Addition Strategy
+                        // Determine document type and use appropriate method:
+                        // - addXmlObject() for XML documents (6 parameters)
+                        // - addPdfObject() for PDF documents (4 parameters)
                         // ============================================
-                        console.log('🔍 [DIAGNOSTIC] D.Bridge JS Version Check:');
-                        console.log('  - Your HTML loads: v1.0 (from slovensko.sk/static/zep/dbridge_js/v1.0/)');
-                        console.log('  - xslMediaDestinationTypeDescription was added in: v1.5.2.0');
-                        console.log('  - This parameter might NOT exist in v1.0!');
-                        console.log('');
-                        console.log('🔍 [DIAGNOSTIC] Testing WITHOUT xslMediaDestinationTypeDescription (v1.0 signature):');
-                        console.log('  1. objectId:', payload.identifier);
-                        console.log('  2. objectDescription:', payload.description);
-                        console.log('  3. xmlBase64 (length):', payload.xmlBase64?.length || 0);
-                        console.log('  4. formatIdentifier:', payload.formatIdentifier);
-                        console.log('  5. formatIdentifier length:', payload.formatIdentifier?.length || 0);
-                        console.log('  6. callback: Callback object');
 
                         // ============================================
-                        // TEST 1: Use addTxtObject() instead of addXmlObject()
-                        // The official sample (DBridgeJSsampleTXT.html) uses addTxtObject(), NOT addXmlObject()
-                        // Theory: addXmlObject() in v1.0 might have bugs with XMLDataContainer parsing
+                        // Multi-Object Signing Strategy
+                        // Sign XMLDataContainer (XML + XSD + XSLT) + PDF (if available)
                         // ============================================
-                        console.log('🧪 [TEST 1] Switching from addXmlObject() to addTxtObject()');
-                        console.log('  - Reason: Official sample uses addTxtObject(), not addXmlObject()');
-                        console.log('  - Theory: addXmlObject() has bugs in v1.0 when parsing XMLDataContainer');
+
+                        console.log('📋 [SIGNING STRATEGY] Multi-object signing');
+                        console.log('  - Object 1: XMLDataContainer (XML + XSD + XSLT references)');
+                        console.log('  - Object 2: PDF (if available)');
                         console.log('');
 
-                        // Use the FULL XMLDataContainer (not minimal test)
-                        const xmlContentToSign = payload.xmlBase64;
-
-                        console.log('🔍 [PARAMETERS] About to call addTxtObject with:');
-                        console.log('  - Param 1 (objectId):', payload.identifier, '(length:', payload.identifier.length, ')');
-                        console.log('  - Param 2 (objectDescription):', payload.description, '(length:', payload.description.length, ')');
-                        console.log('  - Param 3 (textContent/Base64):', xmlContentToSign.substring(0, 50) + '...', '(length:', xmlContentToSign.length, ')');
-                        console.log('  - Param 4 (formatIdentifier):', payload.formatIdentifier, '(length:', payload.formatIdentifier.length, ')');
-                        console.log('  - Param 5 (callback): Callback object');
+                        // Step 3a: Add XMLDataContainer object
+                        console.log('🔍 [OBJECT 1] Adding XMLDataContainer...');
+                        console.log('  - Method: addXmlObject() (16 parameters - D.Bridge API)');
+                        console.log('  - Param 1 (objectId):', payload.identifier);
+                        console.log('  - Param 2 (objectDescription):', payload.description);
+                        console.log('  - Param 3 (objectFormatIdentifier):', payload.formatIdentifier);
+                        console.log('  - Param 4 (xdcXMLData):', payload.xdcXMLData.substring(0, 50) + '...', '(length:', payload.xdcXMLData.length, ')');
+                        console.log('  - Param 5 (xdcIdentifier):', payload.xdcIdentifier);
+                        console.log('  - Param 6 (xdcVersion):', payload.xdcVersion);
+                        console.log('  - Param 7 (xdcUsedXSD):', payload.xdcUsedXSD.substring(0, 50) + '...', '(length:', payload.xdcUsedXSD.length, ')');
+                        console.log('  - Param 8 (xsdReferenceURI):', payload.xsdReferenceURI);
+                        console.log('  - Param 9 (xdcUsedXSLT):', payload.xdcUsedXSLT.substring(0, 50) + '...', '(length:', payload.xdcUsedXSLT.length, ')');
+                        console.log('  - Param 10 (xslReferenceURI):', payload.xslReferenceURI);
+                        console.log('  - Param 11 (xslMediaDestinationTypeDescription):', payload.xslMediaDestinationTypeDescription);
+                        console.log('  - Param 12 (xslXSLTLanguage):', payload.xslXSLTLanguage);
+                        console.log('  - Param 13 (xslTargetEnvironment):', payload.xslTargetEnvironment);
+                        console.log('  - Param 14 (xdcIncludeRefs):', payload.xdcIncludeRefs);
+                        console.log('  - Param 15 (xdcNamespaceURI):', payload.xdcNamespaceURI);
+                        console.log('  - Param 16 (callback): Callback object');
                         console.log('');
-                        console.log('📝 [NOTE] addTxtObject() signature: (objectId, objectDescription, textContent, formatIdentifier, callback)');
-                        console.log('  - Same as addXmlObject() but might not parse the XML content');
-                        console.log('  - This should bypass the "xdcIdentifier" validation error');
 
-                        // TRY addTxtObject() instead of addXmlObject()
-                        // Signature: (objectId, objectDescription, textContent, formatIdentifier, callback)
-                        ditec.dSigXadesBpJs.addTxtObject(
-                            payload.identifier,           // objectId
-                            payload.description,          // objectDescription
-                            xmlContentToSign,            // textContent - Base64-encoded XMLDataContainer
-                            payload.formatIdentifier,    // formatIdentifier
+                        // Use addXmlObject() for XMLDataContainer
+                        // Correct D.Bridge API Signature (16 parameters):
+                        // addXmlObject(objectId, objectDescription, objectFormatIdentifier, xdcXMLData, xdcIdentifier, xdcVersion,
+                        //              xdcUsedXSD, xsdReferenceURI, xdcUsedXSLT, xslReferenceURI, xslMediaDestinationTypeDescription,
+                        //              xslXSLTLanguage, xslTargetEnvironment, xdcIncludeRefs, xdcNamespaceURI, callback)
+                        // D.Bridge builds the XMLDataContainer internally from these components
+                        ditec.dSigXadesBpJs.addXmlObject(
+                            payload.identifier,                              // 1. objectId
+                            payload.description,                             // 2. objectDescription
+                            payload.formatIdentifier,                        // 3. objectFormatIdentifier
+                            payload.xdcXMLData,                             // 4. xdcXMLData - RAW XML
+                            payload.xdcIdentifier,                          // 5. xdcIdentifier
+                            payload.xdcVersion,                             // 6. xdcVersion
+                            payload.xdcUsedXSD,                             // 7. xdcUsedXSD - RAW XSD
+                            payload.xsdReferenceURI,                        // 8. xsdReferenceURI
+                            payload.xdcUsedXSLT,                            // 9. xdcUsedXSLT - RAW XSLT
+                            payload.xslReferenceURI,                        // 10. xslReferenceURI
+                            payload.xslMediaDestinationTypeDescription,     // 11. xslMediaDestinationTypeDescription
+                            payload.xslXSLTLanguage,                        // 12. xslXSLTLanguage
+                            payload.xslTargetEnvironment,                   // 13. xslTargetEnvironment
+                            payload.xdcIncludeRefs,                         // 14. xdcIncludeRefs
+                            payload.xdcNamespaceURI,                        // 15. xdcNamespaceURI
                             new Callback(
                                 function() {
-                                    debugLog('STEP 3', 'XML object added successfully');
+                                    debugLog('STEP 3a', 'XMLDataContainer object added successfully');
 
-                                    // Step 4: Execute signing operation
-                                    debugLog('STEP 4', 'Executing signing operation...');
-                                    showResult('Step 4/5: Waiting for signature... (Please sign in D.Signer window)', 'info');
+                                    // Step 3b: Check if PDF is available and add it
+                                    if (payload.pdfBase64) {
+                                        console.log('🔍 [OBJECT 2] Adding PDF...');
+                                        console.log('  - Param 1 (objectId):', payload.identifier + '-pdf', '(length:', (payload.identifier + '-pdf').length, ')');
+                                        console.log('  - Param 2 (objectDescription): PDF Document');
+                                        console.log('  - Param 3 (pdfBase64):', payload.pdfBase64.substring(0, 50) + '...', '(length:', payload.pdfBase64.length, ')');
+                                        console.log('  - Param 4 (callback): Callback object');
+                                        console.log('');
 
-                                    const signatureId = 'signature-' + Date.now();
-                                    const digestAlgorithm = 'http://www.w3.org/2001/04/xmlenc#sha256';
-                                    const signingCertificate = ''; // Empty = use default certificate
+                                        ditec.dSigXadesBpJs.addPdfObject(
+                                            payload.identifier + '-pdf',  // objectId - unique ID for PDF
+                                            'PDF Document',              // objectDescription
+                                            payload.pdfBase64,          // pdfBase64 - Base64-encoded PDF
+                                            new Callback(
+                                                function() {
+                                                    debugLog('STEP 3b', 'PDF object added successfully');
+                                                    proceedToSigning();
+                                                },
+                                                function(error) {
+                                                    clearSigningTimeout();
+                                                    let errorMessage = error;
+                                                    if (error && typeof error === 'object') {
+                                                        errorMessage = error.message || error.toString() || JSON.stringify(error);
+                                                    }
+                                                    debugLog('ERROR', 'Failed to add PDF object: ' + errorMessage);
+                                                    console.error('[STEP 3b - Full Error Object]', error);
+                                                    reject(new Error(`Failed to add PDF document: ${errorMessage}`));
+                                                }
+                                            )
+                                        );
+                                    } else {
+                                        // No PDF, proceed directly to signing
+                                        proceedToSigning();
+                                    }
 
-                                    ditec.dSigXadesBpJs.sign(
-                                        signatureId,
-                                        digestAlgorithm,
-                                        signingCertificate,
-                                        new Callback(
-                                            function() {
-                                                debugLog('STEP 4', 'Document signed successfully');
+                                    // Helper function to proceed with signing
+                                    function proceedToSigning() {
+                                        // Step 4: Execute signing operation
+                                        debugLog('STEP 4', 'Executing signing operation...');
+                                        showResult('Step 4/5: Waiting for signature... (Please sign in D.Signer window)', 'info');
 
-                                                // Step 5: Retrieve signed ASiC-E container
-                                                debugLog('STEP 5', 'Retrieving signed ASiC-E container...');
-                                                showResult('Step 5/5: Retrieving signed file...', 'info');
+                                        const signatureId = 'signature-' + Date.now();
+                                        const digestAlgorithm = 'http://www.w3.org/2001/04/xmlenc#sha256';
+                                        const signingCertificate = ''; // Empty = use default certificate
 
-                                                ditec.dSigXadesBpJs.getSignatureWithASiCEnvelopeBase64(
-                                                    new Callback(
-                                                        function(asiceBase64) {
-                                                            debugLog('STEP 5', 'ASiC-E container retrieved');
-                                                            debugLog('SUCCESS', 'Signing process completed');
+                                        ditec.dSigXadesBpJs.sign(
+                                            signatureId,
+                                            digestAlgorithm,
+                                            signingCertificate,
+                                            new Callback(
+                                                function() {
+                                                    debugLog('STEP 4', 'Document signed successfully');
 
-                                                            clearSigningTimeout();
+                                                    // Step 5: Retrieve signed ASiC-E container
+                                                    debugLog('STEP 5', 'Retrieving signed ASiC-E container...');
+                                                    showResult('Step 5/5: Retrieving signed file...', 'info');
 
-                                                            // Step 6: Download the signed file
-                                                            try {
-                                                                downloadAsiceFile(asiceBase64, payload.filename);
-                                                                resolve();
-                                                            } catch (error) {
-                                                                debugLog('ERROR', 'Failed to download file: ' + error.message);
-                                                                reject(error);
+                                                    ditec.dSigXadesBpJs.getSignatureWithASiCEnvelopeBase64(
+                                                        new Callback(
+                                                            function(asiceBase64) {
+                                                                debugLog('STEP 5', 'ASiC-E container retrieved');
+                                                                debugLog('SUCCESS', 'Signing process completed');
+
+                                                                clearSigningTimeout();
+
+                                                                // Step 6: Download the signed file
+                                                                try {
+                                                                    downloadAsiceFile(asiceBase64, payload.filename);
+                                                                    resolve();
+                                                                } catch (error) {
+                                                                    debugLog('ERROR', 'Failed to download file: ' + error.message);
+                                                                    reject(error);
+                                                                }
+                                                            },
+                                                            function(error) {
+                                                                clearSigningTimeout();
+                                                                debugLog('ERROR', 'Failed to retrieve ASiC-E container: ' + error);
+                                                                reject(new Error(`Failed to retrieve signed file: ${error}`));
                                                             }
-                                                        },
-                                                        function(error) {
-                                                            clearSigningTimeout();
-                                                            debugLog('ERROR', 'Failed to retrieve ASiC-E container: ' + error);
-                                                            reject(new Error(`Failed to retrieve signed file: ${error}`));
-                                                        }
-                                                    )
-                                                );
-                                            },
-                                            function(error) {
-                                                clearSigningTimeout();
-                                                debugLog('ERROR', 'Signing operation failed: ' + error);
-                                                reject(new Error(`Signing operation failed: ${error}. This may happen if you cancelled the signing or entered wrong password.`));
-                                            }
-                                        )
-                                    );
+                                                        )
+                                                    );
+                                                },
+                                                function(error) {
+                                                    clearSigningTimeout();
+                                                    debugLog('ERROR', 'Signing operation failed: ' + error);
+                                                    reject(new Error(`Signing operation failed: ${error}. This may happen if you cancelled the signing or entered wrong password.`));
+                                                }
+                                            )
+                                        );
+                                    }
                                 },
                                 function(error) {
                                     clearSigningTimeout();
@@ -927,6 +976,22 @@ function signWithDBridge(payload) {
                                     debugLog('ERROR', 'Failed to add XML object: ' + errorMessage);
                                     console.error('[STEP 3 - Full Error Object]', error);
 
+                                    // Detailed debugging for objectFormatIdentifier error
+                                    console.error('❌ [DEBUG] Error Analysis:');
+                                    console.error('  - Error message:', errorMessage);
+                                    console.error('  - formatIdentifier value:', payload.formatIdentifier);
+                                    console.error('  - formatIdentifier length:', payload.formatIdentifier?.length);
+                                    console.error('  - xmlBase64 length:', payload.xmlBase64?.length);
+                                    console.error('  - Decoded XML length:', atob(payload.xmlBase64)?.length);
+
+                                    // Try to decode and show the XMLDataContainer structure
+                                    try {
+                                        const decodedXml = atob(payload.xmlBase64);
+                                        console.error('  - Decoded XML (first 300 chars):', decodedXml.substring(0, 300));
+                                    } catch (e) {
+                                        console.error('  - Failed to decode XML:', e);
+                                    }
+
                                     // Check for specific DitecError about formatIdentifier
                                     if (errorMessage.includes('objectFormatIdentifier') || errorMessage.includes('1024')) {
                                         reject(new Error(`Invalid formatIdentifier: ${errorMessage}\n\nThe formatIdentifier must be less than 1024 characters. Current value: "${payload.formatIdentifier}" (${payload.formatIdentifier?.length || 0} characters)`));
@@ -935,7 +1000,7 @@ function signWithDBridge(payload) {
                                     }
                                 }
                             )
-                        );
+                            );
                     },
                     function(error) {
                         clearSigningTimeout();

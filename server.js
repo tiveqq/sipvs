@@ -1269,30 +1269,65 @@ app.post('/api/prepare-signing', async (req, res) => {
     const timestamp = Date.now();
     const identifier = `student-registration-${timestamp}`;
 
-    // Create XMLDataContainer structure
-    const xmlDataContainer = createXMLDataContainer(
-      xmlContent,
-      xsdContent,
-      xslContent,
-      identifier
-    );
+    // D.Bridge API expects individual components, not pre-built XMLDataContainer
+    // The actual addXmlObject() signature has 16 parameters:
+    // addXmlObject(objectId, objectDescription, objectFormatIdentifier, xdcXMLData, xdcIdentifier, xdcVersion,
+    //              xdcUsedXSD, xsdReferenceURI, xdcUsedXSLT, xslReferenceURI, xslMediaDestinationTypeDescription,
+    //              xslXSLTLanguage, xslTargetEnvironment, xdcIncludeRefs, xdcNamespaceURI, callback)
 
-    // Encode as Base64
-    const xmlBase64 = Buffer.from(xmlDataContainer, 'utf8').toString('base64');
-    const xsdBase64 = Buffer.from(xsdContent, 'utf8').toString('base64');
-    const xslBase64 = Buffer.from(xslContent, 'utf8').toString('base64');
+    // Remove XML declaration for cleaner content
+    const xmlWithoutDeclaration = xmlContent.replace(/<\?xml[^?]*\?>\s*/g, '');
 
-    // Return signing payload
+    // Prepare components for D.Bridge (raw content, not Base64)
+    // D.Bridge will build the XMLDataContainer internally
+    const xmlDataComponent = xmlWithoutDeclaration;
+    const xsdComponent = xsdContent;
+    const xslComponent = xslContent;
+
+    // Return signing payload with individual components
+    // D.Bridge will build the XMLDataContainer internally
+    const fileExtension = path.extname(filename).toLowerCase();
+    const documentType = fileExtension === '.pdf' ? 'pdf' : 'xml';
+
+    // DEBUG: Log payload information
+    const formatIdentifier = 'http://data.gov.sk/def/container/xmldatacontainer+xml/1.1';
+    const xdcVersion = '1.1';
+    const xsdReferenceURI = 'student-registration.xsd';
+    const xslReferenceURI = 'student-registration.xsl';
+
+    console.log('📊 [SIGNING PAYLOAD DEBUG - D.Bridge 16-Parameter API]');
+    console.log('  - Identifier:', identifier, '(length:', identifier.length, ')');
+    console.log('  - Description:', 'Student Registration Form - University Enrollment');
+    console.log('  - formatIdentifier:', formatIdentifier, '(length:', formatIdentifier.length, ')');
+    console.log('  - xdcVersion:', xdcVersion);
+    console.log('  - xdcXMLData length:', xmlDataComponent.length);
+    console.log('  - xdcUsedXSD length:', xsdComponent.length);
+    console.log('  - xdcUsedXSLT length:', xslComponent.length);
+    console.log('  - xsdReferenceURI:', xsdReferenceURI);
+    console.log('  - xslReferenceURI:', xslReferenceURI);
+    console.log('');
+
     res.json({
       success: true,
       payload: {
-        xmlBase64: xmlBase64,
-        xsdBase64: xsdBase64,
-        xslBase64: xslBase64,
-        filename: filename,
-        identifier: identifier,
-        description: 'Student Registration Form - University Enrollment',
-        formatIdentifier: 'http://data.gov.sk/def/container/xmldatacontainer+xml/1.1'
+        documentType: documentType,
+        // D.Bridge 16-parameter addXmlObject() components
+        identifier: identifier,                    // objectId
+        description: 'Student Registration Form - University Enrollment',  // objectDescription
+        formatIdentifier: formatIdentifier,        // objectFormatIdentifier
+        xdcXMLData: xmlDataComponent,             // xdcXMLData - RAW XML
+        xdcIdentifier: identifier,                // xdcIdentifier
+        xdcVersion: xdcVersion,                   // xdcVersion
+        xdcUsedXSD: xsdComponent,                 // xdcUsedXSD - RAW XSD
+        xsdReferenceURI: xsdReferenceURI,         // xsdReferenceURI
+        xdcUsedXSLT: xslComponent,                // xdcUsedXSLT - RAW XSLT
+        xslReferenceURI: xslReferenceURI,         // xslReferenceURI
+        xslMediaDestinationTypeDescription: 'HTML', // xslMediaDestinationTypeDescription
+        xslXSLTLanguage: 'http://www.w3.org/1999/XSL/Transform', // xslXSLTLanguage
+        xslTargetEnvironment: 'HTML',             // xslTargetEnvironment
+        xdcIncludeRefs: true,                     // xdcIncludeRefs
+        xdcNamespaceURI: formatIdentifier,        // xdcNamespaceURI
+        filename: filename
       }
     });
 
@@ -1360,6 +1395,40 @@ function createXMLDataContainer(xmlContent, xsdContent, xslContent, identifier) 
       <xdc:TransformAlgorithm Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
     </xdc:UsedXSLTReference>
   </xdc:UsedPresentationSchemasReferenced>
+</xdc:XMLDataContainer>`;
+
+  return container;
+}
+
+/**
+ * Create MINIMAL XMLDataContainer structure for D.Bridge v1.0 compatibility
+ *
+ * This version removes XSD/XSLT references to avoid D.Bridge v1.0 bug where
+ * addXmlObject() incorrectly validates internal structure as "objectFormatIdentifier"
+ * and fails if it exceeds 1024 characters.
+ *
+ * The minimal version:
+ * - Still complies with XMLDataContainer format (v1.1)
+ * - Wraps XML content with proper namespace
+ * - Includes Identifier attribute
+ * - Removes XSD/XSLT references (these add size)
+ * - Stays under 1024 characters when decoded
+ *
+ * @param {string} xmlContent - The XML content to wrap
+ * @param {string} identifier - Unique identifier for the XMLData element
+ * @returns {string} Minimal XMLDataContainer XML
+ */
+function createMinimalXMLDataContainer(xmlContent, identifier) {
+  // Remove XML declaration if present
+  const xmlWithoutDeclaration = xmlContent.replace(/<\?xml[^?]*\?>\s*/g, '');
+
+  // Create minimal XMLDataContainer without XSD/XSLT references
+  // This avoids the D.Bridge v1.0 bug with addXmlObject()
+  const container = `<?xml version="1.0" encoding="UTF-8"?>
+<xdc:XMLDataContainer xmlns:xdc="http://data.gov.sk/def/container/xmldatacontainer+xml/1.1">
+  <xdc:XMLData ContentType="application/xml; charset=UTF-8" Identifier="${identifier}" Version="1.0">
+    <xdc:XMLContent><![CDATA[${xmlWithoutDeclaration}]]></xdc:XMLContent>
+  </xdc:XMLData>
 </xdc:XMLDataContainer>`;
 
   return container;
