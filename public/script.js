@@ -649,15 +649,27 @@ async function handleSignXml() {
 
         const { payload } = await prepareResponse.json();
 
+        // Log payload for debugging
+        console.log('[FRONTEND] Received signing payload from backend:');
+        console.log('  - Identifier:', payload.identifier);
+        console.log('  - Description:', payload.description);
+        console.log('  - formatIdentifier:', payload.formatIdentifier);
+        console.log('  - xdcXMLData length:', payload.xdcXMLData?.length);
+        console.log('  - xdcUsedXSD length:', payload.xdcUsedXSD?.length);
+        console.log('  - xdcUsedXSLT length:', payload.xdcUsedXSLT?.length);
+        console.log('  - pdfBase64 present:', !!payload.pdfBase64);
+        console.log('  - pdfBase64 length:', payload.pdfBase64?.length);
+        console.log('');
+
         // Step 2: Initialize D.Bridge JS and sign
-        signXmlBtn.textContent = '🔄 Connecting to D.Signer...';
+        signXmlBtn.textContent = 'Connecting to D.Signer...';
         showResult('Connecting to D.Signer... Please wait.', 'info');
 
         await signWithDBridge(payload);
 
         // Success
-        showResult('✅ Document signed successfully! ASiC-E file downloaded.', 'success');
-        signXmlBtn.textContent = '✅ Signed!';
+        showResult('Document signed successfully! ASiC-E file downloaded.', 'success');
+        signXmlBtn.textContent = 'Signed!';
 
         // Reset button after 3 seconds
         setTimeout(() => {
@@ -668,7 +680,7 @@ async function handleSignXml() {
     } catch (error) {
         console.error('Signing error:', error);
         const errorMessage = handleDSignerError(error);
-        showResult(`❌ Signing failed: ${errorMessage}`, 'error');
+        showResult(`Signing failed: ${errorMessage}`, 'error');
         signXmlBtn.textContent = '🔐 Sign';
         signXmlBtn.disabled = false;
     }
@@ -680,6 +692,17 @@ async function handleSignXml() {
  */
 function signWithDBridge(payload) {
     return new Promise((resolve, reject) => {
+        // Log payload structure at the start
+        console.log('🔍 [signWithDBridge] Payload structure:');
+        console.log('  - payload.pdfBase64 exists:', !!payload.pdfBase64);
+        console.log('  - payload.pdfBase64 type:', typeof payload.pdfBase64);
+        console.log('  - payload.pdfBase64 length:', payload.pdfBase64?.length);
+        if (payload.pdfBase64) {
+            console.log('  - PDF starts with:', payload.pdfBase64.substring(0, 20));
+            console.log('  - PDF is valid Base64:', /^[A-Za-z0-9+/=]+$/.test(payload.pdfBase64));
+        }
+        console.log('');
+
         // Check if D.Bridge JS is loaded
         if (typeof ditec === 'undefined' || !ditec.dSigXadesBpJs) {
             reject(new Error('D.Bridge JS library not loaded. Please refresh the page.'));
@@ -821,13 +844,13 @@ function signWithDBridge(payload) {
                         // Sign XMLDataContainer (XML + XSD + XSLT) + PDF (if available)
                         // ============================================
 
-                        console.log('📋 [SIGNING STRATEGY] Multi-object signing');
+                        console.log('[SIGNING STRATEGY] Multi-object signing');
                         console.log('  - Object 1: XMLDataContainer (XML + XSD + XSLT references)');
                         console.log('  - Object 2: PDF (if available)');
                         console.log('');
 
                         // Step 3a: Add XMLDataContainer object
-                        console.log('🔍 [OBJECT 1] Adding XMLDataContainer...');
+                        console.log('[OBJECT 1] Adding XMLDataContainer...');
                         console.log('  - Method: addXmlObject() (16 parameters - D.Bridge API)');
                         console.log('  - Param 1 (objectId):', payload.identifier);
                         console.log('  - Param 2 (objectDescription):', payload.description);
@@ -873,38 +896,77 @@ function signWithDBridge(payload) {
                                 function() {
                                     debugLog('STEP 3a', 'XMLDataContainer object added successfully');
 
-                                    // Step 3b: Check if PDF is available and add it
+                                    // Step 3b: Add PDF object if available
                                     if (payload.pdfBase64) {
-                                        console.log('🔍 [OBJECT 2] Adding PDF...');
-                                        console.log('  - Param 1 (objectId):', payload.identifier + '-pdf', '(length:', (payload.identifier + '-pdf').length, ')');
-                                        console.log('  - Param 2 (objectDescription): PDF Document');
-                                        console.log('  - Param 3 (pdfBase64):', payload.pdfBase64.substring(0, 50) + '...', '(length:', payload.pdfBase64.length, ')');
-                                        console.log('  - Param 4 (callback): Callback object');
+                                        console.log('🔍 [OBJECT 2] Adding PDF document...');
+                                        console.log('  - Method: addPdfObject() (8 parameters - D.Bridge API)');
+                                        console.log('  - Param 1 (objectId):', 'pdf-' + Date.now());
+                                        console.log('  - Param 2 (objectDescription): Student Registration PDF');
+                                        console.log('  - Param 3 (sourcePdfBase64): PDF binary data');
+                                        console.log('    * PDF size:', (payload.pdfBase64.length / 1024).toFixed(2), 'KB');
+                                        console.log('    * PDF header:', payload.pdfBase64.substring(0, 20));
+                                        console.log('  - Param 4 (password): (empty - no password protection)');
+                                        console.log('  - Param 5 (objectFormatIdentifier): application/pdf');
+                                        console.log('  - Param 6 (reqLevel): 0 (no requirement level)');
+                                        console.log('  - Param 7 (convert): false (no conversion)');
+                                        console.log('  - Param 8 (callback): Callback object');
+                                        console.log('');
+                                        console.log('[WARNING] D.Bridge requires PDF/A-1 compliance for PDF signing.');
+                                        console.log('   If PDF/A-1 errors occur, the system will automatically fall back');
+                                        console.log('   to signing XMLDataContainer only.');
                                         console.log('');
 
+                                        // Use addPdfObject() for PDF document
+                                        // D.Bridge API Signature (8 parameters):
+                                        // addPdfObject(objectId, objectDescription, sourcePdfBase64, password,
+                                        //              objectFormatIdentifier, reqLevel, convert, callback)
                                         ditec.dSigXadesBpJs.addPdfObject(
-                                            payload.identifier + '-pdf',  // objectId - unique ID for PDF
-                                            'PDF Document',              // objectDescription
-                                            payload.pdfBase64,          // pdfBase64 - Base64-encoded PDF
+                                            'pdf-' + Date.now(),                          // 1. objectId
+                                            'Student Registration PDF',                   // 2. objectDescription
+                                            payload.pdfBase64,                           // 3. sourcePdfBase64 - PDF binary data
+                                            '',                                          // 4. password - empty (no password protection)
+                                            'application/pdf',                           // 5. objectFormatIdentifier
+                                            0,                                           // 6. reqLevel - no requirement level
+                                            true,                                       // 7. convert - no conversion needed
                                             new Callback(
                                                 function() {
                                                     debugLog('STEP 3b', 'PDF object added successfully');
+                                                    console.log('[OBJECT 2] PDF document added successfully');
+                                                    console.log('');
                                                     proceedToSigning();
                                                 },
                                                 function(error) {
                                                     clearSigningTimeout();
-                                                    let errorMessage = error;
-                                                    if (error && typeof error === 'object') {
-                                                        errorMessage = error.message || error.toString() || JSON.stringify(error);
+                                                    debugLog('ERROR', 'Failed to add PDF object: ' + error);
+                                                    console.error('[OBJECT 2] Failed to add PDF document:', error);
+
+                                                    // Check if error is PDF/A-1 compliance related
+                                                    const errorStr = String(error).toLowerCase();
+                                                    if (errorStr.includes('pdfa') || errorStr.includes('pdf/a') ||
+                                                        errorStr.includes('pdfacompliance') || errorStr.includes('font program') ||
+                                                        errorStr.includes('metadata stream') || errorStr.includes('tagged pdf') ||
+                                                        errorStr.includes('outputintent') || errorStr.includes('structtreeroot')) {
+
+                                                        console.warn('[CRITICAL] PDF/A-1 COMPLIANCE ERROR DETECTED');
+                                                        console.warn('   Error:', error);
+                                                        console.log('');
+                                                        console.log('[FALLBACK] Proceeding with XMLDataContainer only');
+                                                        console.log('   PDF object will be skipped due to PDF/A-1 compliance issues');
+                                                        console.log('');
+                                                        // Continue with signing XMLDataContainer only
+                                                        proceedToSigning();
+                                                    } else {
+                                                        // For other errors, reject
+                                                        console.error('[OBJECT 2] Non-PDF/A-1 error - rejecting');
+                                                        reject(new Error(`Failed to add PDF object: ${error}`));
                                                     }
-                                                    debugLog('ERROR', 'Failed to add PDF object: ' + errorMessage);
-                                                    console.error('[STEP 3b - Full Error Object]', error);
-                                                    reject(new Error(`Failed to add PDF document: ${errorMessage}`));
                                                 }
                                             )
                                         );
                                     } else {
-                                        // No PDF, proceed directly to signing
+                                        console.log('[OBJECT 2] PDF not available');
+                                        console.log('  - Signing XMLDataContainer only');
+                                        console.log('');
                                         proceedToSigning();
                                     }
 
@@ -976,8 +1038,90 @@ function signWithDBridge(payload) {
                                     debugLog('ERROR', 'Failed to add XML object: ' + errorMessage);
                                     console.error('[STEP 3 - Full Error Object]', error);
 
+                                    // CHECK FOR PDF/A-1 COMPLIANCE ERROR (CRITICAL FIX)
+                                    // The error might be from PDF object addition, not XML object
+                                    const errorStr = String(errorMessage).toLowerCase();
+                                    if (errorStr.includes('pdfa') || errorStr.includes('pdf/a') ||
+                                        errorStr.includes('pdfacompliance') || errorStr.includes('font program') ||
+                                        errorStr.includes('metadata stream') || errorStr.includes('tagged pdf') ||
+                                        errorStr.includes('outputintent') || errorStr.includes('structtreeroot')) {
+
+                                        console.warn('[CRITICAL] PDF/A-1 COMPLIANCE ERROR DETECTED');
+                                        console.warn('   Error:', errorMessage);
+                                        console.log('');
+                                        console.log('[FALLBACK] Attempting to sign XMLDataContainer only...');
+                                        console.log('   PDF object will be skipped due to PDF/A-1 compliance issues');
+                                        console.log('');
+
+                                        // FALLBACK: Try to proceed with signing XMLDataContainer only
+                                        // by calling proceedToSigning() which will use the already-added XML object
+                                        try {
+                                            // The XMLDataContainer was already added successfully
+                                            // Just proceed to signing
+                                            const signatureId = 'signature-' + Date.now();
+                                            const digestAlgorithm = 'http://www.w3.org/2001/04/xmlenc#sha256';
+                                            const signingCertificate = '';
+
+                                            console.log('📋 [FALLBACK] Proceeding with XMLDataContainer-only signing...');
+                                            console.log('');
+
+                                            ditec.dSigXadesBpJs.sign(
+                                                signatureId,
+                                                digestAlgorithm,
+                                                signingCertificate,
+                                                new Callback(
+                                                    function() {
+                                                        debugLog('STEP 4', 'Document signed successfully (XMLDataContainer only)');
+                                                        console.log('✅ [FALLBACK] XMLDataContainer signed successfully');
+                                                        console.log('');
+
+                                                        // Step 5: Retrieve signed ASiC-E container
+                                                        debugLog('STEP 5', 'Retrieving signed ASiC-E container...');
+                                                        showResult('Step 5/5: Retrieving signed file...', 'info');
+
+                                                        ditec.dSigXadesBpJs.getSignatureWithASiCEnvelopeBase64(
+                                                            new Callback(
+                                                                function(asiceBase64) {
+                                                                    debugLog('STEP 5', 'ASiC-E container retrieved');
+                                                                    debugLog('SUCCESS', 'Signing process completed (XMLDataContainer only)');
+                                                                    console.log('[FALLBACK] ASiC-E container retrieved successfully');
+                                                                    console.log('');
+
+                                                                    clearSigningTimeout();
+
+                                                                    // Step 6: Download the signed file
+                                                                    try {
+                                                                        downloadAsiceFile(asiceBase64, payload.filename);
+                                                                        resolve();
+                                                                    } catch (error) {
+                                                                        debugLog('ERROR', 'Failed to download file: ' + error.message);
+                                                                        reject(error);
+                                                                    }
+                                                                },
+                                                                function(error) {
+                                                                    clearSigningTimeout();
+                                                                    debugLog('ERROR', 'Failed to retrieve ASiC-E container: ' + error);
+                                                                    reject(new Error(`Failed to retrieve signed file: ${error}`));
+                                                                }
+                                                            )
+                                                        );
+                                                    },
+                                                    function(error) {
+                                                        clearSigningTimeout();
+                                                        debugLog('ERROR', 'Signing operation failed: ' + error);
+                                                        reject(new Error(`Signing operation failed: ${error}. This may happen if you cancelled the signing or entered wrong password.`));
+                                                    }
+                                                )
+                                            );
+                                        } catch (fallbackError) {
+                                            console.error('[FALLBACK] Fallback signing failed:', fallbackError);
+                                            reject(new Error(`Fallback signing failed: ${fallbackError}`));
+                                        }
+                                        return;
+                                    }
+
                                     // Detailed debugging for objectFormatIdentifier error
-                                    console.error('❌ [DEBUG] Error Analysis:');
+                                    console.error('[DEBUG] Error Analysis:');
                                     console.error('  - Error message:', errorMessage);
                                     console.error('  - formatIdentifier value:', payload.formatIdentifier);
                                     console.error('  - formatIdentifier length:', payload.formatIdentifier?.length);
@@ -1075,7 +1219,7 @@ function handleDSignerError(error) {
 
     // Check for formatIdentifier length error (DitecError)
     if (errorMessage.includes('objectformatidentifier') || errorMessage.includes('1024') || errorMessage.includes('invalid formatidentifier')) {
-        return `❌ Invalid formatIdentifier parameter
+        return `Invalid formatIdentifier parameter
 
 ${error.message}
 

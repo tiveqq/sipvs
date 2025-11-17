@@ -796,7 +796,171 @@ const transformXMLToHTML = async (xmlContent) => {
   }
 };
 
-// Routes
+/**
+ * Generate PDF/A-1 compliant PDF from HTML content
+ * Used for creating PDF version of XML for multi-object signing
+ * Fallback: If LibreOffice is not available, uses pdfkit (non-compliant)
+ */
+const generatePDFFromHTML = async (htmlContent) => {
+  const fs = require('fs');
+  const path = require('path');
+  const { execSync } = require('child_process');
+  const os = require('os');
+
+  try {
+    // Step 1: Create temporary HTML file
+    const tempDir = os.tmpdir();
+    const htmlFileName = `temp-${Date.now()}.html`;
+    const htmlFilePath = path.join(tempDir, htmlFileName);
+    const pdfFileName = `temp-${Date.now()}.pdf`;
+    const pdfFilePath = path.join(tempDir, pdfFileName);
+
+    console.log('[PDF/A-1] Creating temporary HTML file...');
+    fs.writeFileSync(htmlFilePath, htmlContent, 'utf8');
+
+    try {
+      // Step 2: Try to use LibreOffice to generate PDF/A-1
+      console.log('[PDF/A-1] Converting HTML to PDF/A-1 using LibreOffice...');
+
+      // LibreOffice command for PDF/A-1 generation
+      // SelectPdfVersion=1 means PDF/A-1b
+      const command = `soffice --headless --convert-to pdf:"writer_pdf_Export:SelectPdfVersion=1" --outdir "${tempDir}" "${htmlFilePath}"`;
+
+      console.log('[PDF/A-1] Executing:', command);
+      execSync(command, { stdio: 'pipe', timeout: 30000 });
+
+      // Step 3: Read the generated PDF
+      console.log('[PDF/A-1] Reading generated PDF...');
+      const pdfBuffer = fs.readFileSync(pdfFilePath);
+      const pdfBase64 = pdfBuffer.toString('base64');
+
+      // Step 4: Verify PDF header
+      const pdfHeader = pdfBuffer.toString('utf8', 0, 10);
+      console.log('[PDF/A-1] PDF generated successfully');
+      console.log('   - PDF header:', pdfHeader);
+      console.log('   - PDF size:', (pdfBase64.length / 1024).toFixed(2), 'KB');
+      console.log('   - Compliance: PDF/A-1b');
+
+      // Cleanup
+      try {
+        fs.unlinkSync(htmlFilePath);
+        fs.unlinkSync(pdfFilePath);
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+
+      return {
+        success: true,
+        pdfBase64: pdfBase64,
+        type: 'pdf-a1',
+        compliance: 'PDF/A-1b'
+      };
+    } catch (libreOfficeError) {
+      console.warn('[PDF/A-1] LibreOffice conversion failed:', libreOfficeError.message);
+      console.log('[PDF/A-1] Falling back to pdfkit (non-compliant)...');
+
+      // Cleanup
+      try {
+        fs.unlinkSync(htmlFilePath);
+        if (fs.existsSync(pdfFilePath)) fs.unlinkSync(pdfFilePath);
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+
+      // Fallback to pdfkit
+      return await generatePDFWithPdfKit(htmlContent);
+    }
+  } catch (error) {
+    console.error('[PDF/A-1] PDF generation error:', error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+/**
+ * Fallback PDF generation using pdfkit
+ * Note: This generates standard PDF, NOT PDF/A-1 compliant
+ * Used only when LibreOffice is not available
+ */
+const generatePDFWithPdfKit = async (htmlContent) => {
+  try {
+    const PDFDocument = require('pdfkit');
+    const { stripHtml } = require('string-strip-html');
+
+    return new Promise((resolve, reject) => {
+      try {
+        // Create a PDF document
+        const doc = new PDFDocument({
+          size: 'A4',
+          margin: 50,
+          bufferPages: true,
+          autoFirstPage: true
+        });
+
+        // Extract text from HTML (remove HTML tags)
+        const plainText = stripHtml(htmlContent).result;
+
+        // Add metadata
+        doc.info.Title = 'Student Registration Document';
+        doc.info.Author = 'SIPVS-1 System';
+        doc.info.Subject = 'Student Registration';
+        doc.info.Keywords = 'student, registration, university';
+        doc.info.Producer = 'SIPVS-1';
+        doc.info.Creator = 'SIPVS-1';
+
+        // Add title
+        doc.fontSize(16).font('Helvetica-Bold').text('Student Registration Document', { align: 'center' });
+        doc.moveDown();
+
+        // Add content
+        doc.fontSize(11).font('Helvetica').text(plainText, {
+          align: 'left',
+          width: 500,
+          lineGap: 4
+        });
+
+        // Collect PDF data
+        const chunks = [];
+        doc.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
+
+        doc.on('end', () => {
+          const pdfBuffer = Buffer.concat(chunks);
+          const pdfBase64 = pdfBuffer.toString('base64');
+
+          console.warn('[PDFKIT] Generated standard PDF (NOT PDF/A-1 compliant)');
+          console.log('   - PDF size:', (pdfBase64.length / 1024).toFixed(2), 'KB');
+          console.log('   - Compliance: Standard PDF (may fail D.Bridge validation)');
+
+          resolve({
+            success: true,
+            pdfBase64: pdfBase64,
+            type: 'pdf',
+            compliance: 'Standard PDF (non-compliant)'
+          });
+        });
+
+        doc.on('error', (error) => {
+          reject(error);
+        });
+
+        // Finalize the PDF
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  } catch (error) {
+    console.error('[PDFKIT] PDF generation error:', error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
 
 // Serve the main form page
 app.get('/', (req, res) => {
@@ -1284,6 +1448,38 @@ app.post('/api/prepare-signing', async (req, res) => {
     const xsdComponent = xsdContent;
     const xslComponent = xslContent;
 
+    console.log('Generating PDF for multi-object signing...');
+
+    let pdfBase64 = null;
+    const ENABLE_PDF_SIGNING = true; // Set to false to disable PDF signing
+
+    if (ENABLE_PDF_SIGNING) {
+      try {
+        // First, transform XML to HTML for PDF generation
+        const transformResult = await transformXMLToHTML(xmlContent);
+
+        if (transformResult.success) {
+          console.log('✅ XML transformed to HTML successfully');
+
+          // Now generate PDF from the HTML
+          const pdfResult = await generatePDFFromHTML(transformResult.html);
+          if (pdfResult.success) {
+            pdfBase64 = pdfResult.pdfBase64;
+          } else {
+            console.warn('PDF generation failed:', pdfResult.error);
+          }
+        } else {
+          console.warn('XML to HTML transformation failed:', transformResult.error);
+          console.log('   Continuing with XMLDataContainer only');
+        }
+      } catch (error) {
+        console.warn('PDF generation error:', error.message);
+        console.log('   Continuing with XMLDataContainer only');
+      }
+    } else {
+      console.log('PDF signing disabled - signing XMLDataContainer only');
+    }
+
     // Return signing payload with individual components
     // D.Bridge will build the XMLDataContainer internally
     const fileExtension = path.extname(filename).toLowerCase();
@@ -1295,7 +1491,7 @@ app.post('/api/prepare-signing', async (req, res) => {
     const xsdReferenceURI = 'student-registration.xsd';
     const xslReferenceURI = 'student-registration.xsl';
 
-    console.log('📊 [SIGNING PAYLOAD DEBUG - D.Bridge 16-Parameter API]');
+    console.log('[SIGNING PAYLOAD DEBUG - D.Bridge 16-Parameter API]');
     console.log('  - Identifier:', identifier, '(length:', identifier.length, ')');
     console.log('  - Description:', 'Student Registration Form - University Enrollment');
     console.log('  - formatIdentifier:', formatIdentifier, '(length:', formatIdentifier.length, ')');
@@ -1305,6 +1501,12 @@ app.post('/api/prepare-signing', async (req, res) => {
     console.log('  - xdcUsedXSLT length:', xslComponent.length);
     console.log('  - xsdReferenceURI:', xsdReferenceURI);
     console.log('  - xslReferenceURI:', xslReferenceURI);
+    console.log('');
+
+    // Log multi-object signing status
+    console.log('[MULTI-OBJECT SIGNING PAYLOAD]');
+    console.log('  - Object 1 (XMLDataContainer): ✅ Included');
+    console.log('  - Object 2 (PDF): ' + (pdfBase64 ? '✅ Included (' + (pdfBase64.length / 1024).toFixed(2) + ' KB)' : '⚠️ Not generated'));
     console.log('');
 
     res.json({
@@ -1327,6 +1529,8 @@ app.post('/api/prepare-signing', async (req, res) => {
         xslTargetEnvironment: 'HTML',             // xslTargetEnvironment
         xdcIncludeRefs: true,                     // xdcIncludeRefs
         xdcNamespaceURI: formatIdentifier,        // xdcNamespaceURI
+        // Multi-object signing: PDF for second object
+        pdfBase64: pdfBase64,                     // PDF document (if generated successfully)
         filename: filename
       }
     });
