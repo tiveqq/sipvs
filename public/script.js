@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeForm();
     setupEventListeners();
     loadXmlFiles();
+    initializeXadesConversion();
 });
 
 // Initialize form with default values and validation
@@ -555,7 +556,7 @@ function loadSampleData() {
             input.value = emergencyValues[input.name];
         }
     });
-    
+     
     // Course
     const courseInputs = document.querySelectorAll('[name^="courses[0]"]');
     const courseValues = {
@@ -1274,4 +1275,186 @@ Please check:
     return `Signing error: ${error.message}
 
 Please check the browser console for more details.`;
+}
+
+// ============================================================================
+// XAdES-BES to XAdES-T Conversion Functions
+// ============================================================================
+
+/**
+ * Initialize XAdES conversion UI
+ */
+function initializeXadesConversion() {
+    const xadesSection = document.getElementById('xadesConversionSection');
+    const convertBtn = document.getElementById('convertBesToTBtn');
+    const fileInput = document.getElementById('xadesFileInput');
+
+    if (xadesSection) {
+        xadesSection.style.display = 'block';
+    }
+
+    if (convertBtn) {
+        convertBtn.addEventListener('click', handleConvertBesToT);
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                convertBtn.disabled = false;
+            }
+        });
+    }
+}
+
+/**
+ * Handle XAdES-BES to XAdES-T conversion
+ */
+async function handleConvertBesToT() {
+    const fileInput = document.getElementById('xadesFileInput');
+    const convertBtn = document.getElementById('convertBesToTBtn');
+    const progressDiv = document.getElementById('xadesConversionProgress');
+    const progressFill = document.getElementById('xadesProgressFill');
+    const progressText = document.getElementById('xadesProgressText');
+
+    if (!fileInput.files || fileInput.files.length === 0) {
+        showResult('Please select an XML file to convert', 'error');
+        return;
+    }
+
+    const file = fileInput.files[0];
+
+    // Validate file type (XML or ASiC-E)
+    const isXml = file.name.endsWith('.xml');
+    const isAsice = file.name.endsWith('.asice') || file.name.endsWith('.sce');
+
+    if (!isXml && !isAsice) {
+        showResult('Please select a valid XML or ASiC-E file (.xml, .asice, or .sce)', 'error');
+        return;
+    }
+
+    // Show progress
+    progressDiv.style.display = 'block';
+    convertBtn.disabled = true;
+    fileInput.disabled = true;
+
+    try {
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('xmlFile', file);
+
+        // Update progress
+        const fileType = isAsice ? 'ASiC-E container' : 'XML file';
+        updateProgress(progressFill, progressText, 10, `Uploading ${fileType}...`);
+
+        // Send conversion request
+        const response = await fetch('/api/convert-bes-to-t', {
+            method: 'POST',
+            body: formData
+        });
+
+        const processingMsg = isAsice ? 'Extracting and processing ASiC-E container...' : 'Processing signature...';
+        updateProgress(progressFill, progressText, 50, processingMsg);
+
+        const result = await response.json();
+
+        if (result.success) {
+            updateProgress(progressFill, progressText, 90, 'Finalizing...');
+
+            // Show success message
+            const containerInfo = result.containerType === 'asice' ?
+                '<p><strong>Container type:</strong> ASiC-E (Extended)</p>' : '';
+            const successHtml = `
+                <div class="result-success">
+                    <h4>✅ Conversion Successful!</h4>
+                    <p><strong>Original file:</strong> ${file.name}</p>
+                    <p><strong>Output file:</strong> ${result.filename}</p>
+                    ${containerInfo}
+                    <p><strong>Status:</strong> XAdES-BES successfully extended to XAdES-T</p>
+                    ${result.validation.warnings.length > 0 ? `
+                    <div class="warnings">
+                        <h5>Warnings:</h5>
+                        <ul>
+                            ${result.validation.warnings.map(w => `<li>${w}</li>`).join('')}
+                        </ul>
+                    </div>
+                    ` : ''}
+                    <button type="button" class="btn-info" onclick="downloadConvertedFile('${result.filename}')">
+                        📥 Download Converted File
+                    </button>
+                </div>
+            `;
+
+            showResult(successHtml, 'success', true);
+            updateProgress(progressFill, progressText, 100, 'Complete!');
+
+            // Reset form after 2 seconds
+            setTimeout(() => {
+                fileInput.value = '';
+                progressDiv.style.display = 'none';
+                progressFill.style.width = '0%';
+                convertBtn.disabled = false;
+                fileInput.disabled = false;
+            }, 2000);
+
+        } else {
+            updateProgress(progressFill, progressText, 0, 'Error');
+            const errorHtml = `
+                <div class="result-error">
+                    <h4>❌ Conversion Failed</h4>
+                    <p><strong>Error:</strong> ${result.error}</p>
+                    ${result.details ? `
+                    <div class="error-details">
+                        <h5>Details:</h5>
+                        <ul>
+                            ${result.details.map(d => `<li>${d}</li>`).join('')}
+                        </ul>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            showResult(errorHtml, 'error', true);
+            convertBtn.disabled = false;
+            fileInput.disabled = false;
+        }
+
+    } catch (error) {
+        updateProgress(progressFill, progressText, 0, 'Error');
+        showResult(`Network error: ${error.message}`, 'error');
+        convertBtn.disabled = false;
+        fileInput.disabled = false;
+    }
+}
+
+/**
+ * Update progress bar
+ */
+function updateProgress(progressFill, progressText, percentage, message) {
+    progressFill.style.width = percentage + '%';
+    progressText.textContent = message;
+}
+
+/**
+ * Download converted file
+ */
+async function downloadConvertedFile(filename) {
+    try {
+        const response = await fetch(`/api/download-file?filename=${encodeURIComponent(filename)}`);
+
+        if (!response.ok) {
+            throw new Error('File download failed');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+        showResult(`Download failed: ${error.message}`, 'error');
+    }
 }

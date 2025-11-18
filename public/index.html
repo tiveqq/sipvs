@@ -380,6 +380,23 @@
                 </div>
             </section>
 
+            <!-- XAdES Conversion Section -->
+            <section id="xadesConversionSection" class="xades-conversion-section" style="display: none;">
+                <h2>XAdES Signature Conversion</h2>
+                <p class="section-description">Convert XAdES-BES signatures to XAdES-T by adding RFC 3161 timestamps. Supports standalone XML files and ASiC-E containers.</p>
+                <div class="field">
+                    <label for="xadesFileInput">Upload XAdES-BES Signature (XML or ASiC-E):</label>
+                    <input type="file" id="xadesFileInput" accept=".xml,.asice,.sce" />
+                    <button type="button" id="convertBesToTBtn" class="btn-success">🔐 Convert BES to T</button>
+                </div>
+                <div id="xadesConversionProgress" style="display: none; margin-top: 15px;">
+                    <div class="progress-bar">
+                        <div id="xadesProgressFill" class="progress-fill"></div>
+                    </div>
+                    <p id="xadesProgressText" style="margin-top: 10px; font-size: 14px;"></p>
+                </div>
+            </section>
+
             <!-- Results Section -->
             <section id="resultsSection" class="results-section" style="display: none;">
                 <h2>Results</h2>
